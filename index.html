@@ -1,0 +1,2939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>PUZZLES – Full Prototype (Scenario Update)</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f3f4f6;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      width: 100%;
+      max-width: 100vw;
+    }
+
+    #app-container {
+      width: 100%;
+      max-width: 410px;
+      height: 820px;
+      background-color: white;
+      border-radius: 2.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      overflow-x: hidden;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .app-screen-padded {
+      padding-bottom: 90px;
+      height: 100%;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    
+    /* Ensure headers with Profile buttons have proper z-index */
+    .p-6.pt-10.bg-white.border-b,
+    div[class*="p-6 pt-10"][class*="border-b"] {
+      position: relative;
+      z-index: 20;
+    }
+
+    .chat-area-wrapper {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+      overflow-x: hidden;
+      overflow-y: auto;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .chat-content {
+      padding: 10px 16px;
+      overflow-x: hidden;
+      overflow-y: auto;
+      flex-grow: 1;
+      padding-bottom: 24px;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .chat-input-bar {
+      flex-shrink: 0;
+      background: #f7f7f7;
+      border-top: 1px solid #e5e7eb;
+      padding: 10px;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    .bot-bubble {
+      background-color: #f1f5f9;
+      color: #111827;
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      border-top-left-radius: 0.25rem;
+    }
+
+    .user-bubble {
+      background-color: #4f46e5;
+      color: white;
+      border-radius: 1rem;
+      border-top-right-radius: 0.25rem;
+    }
+
+    .dev-panel {
+      max-height: 220px;
+      transition: max-height 0.25s ease-in-out;
+      overflow: hidden;
+      border-top: 1px solid #e5e7eb;
+    }
+    .dev-panel.collapsed { max-height: 0; }
+
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      max-width: 100%;
+      height: 78px;
+      background: white;
+      border-top: 1px solid #e5e7eb;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+      z-index: 40;
+      padding: 0;
+      box-sizing: border-box;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .bottom-nav::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 40px;
+      height: 100%;
+      background: linear-gradient(to left, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .bottom-nav::-webkit-scrollbar {
+      display: none;
+    }
+    .bottom-nav-items {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 8px;
+      min-width: max-content;
+      padding: 8px 12px;
+      height: 100%;
+      box-sizing: border-box;
+      position: relative;
+      z-index: 0;
+    }
+
+    .chip {
+      padding: 6px 10px;
+      font-size: 12px;
+      border-radius: 999px;
+      border: 1px solid #c7d2fe;
+      background: #eef2ff;
+      color: #4338ca;
+      font-weight: 700;
+    }
+    .chip:hover { background: #e0e7ff; }
+
+    .card-shadow { box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+
+    .h-scroll {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: thin;
+    }
+    .h-scroll::-webkit-scrollbar { height: 8px; }
+    .h-scroll::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 999px; }
+
+    .tv-card {
+      min-width: 150px;
+      max-width: 150px;
+      border-radius: 16px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
+      box-shadow: 0 10px 18px rgba(0,0,0,0.06);
+    }
+
+    .tv-img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      background: #f3f4f6;
+    }
+
+    .tv-img-fallback {
+      width: 100%;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #eef2ff, #fce7f3);
+      color: #111827;
+      font-weight: 900;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-item-active {
+      color: #4f46e5;
+      background: #e0e7ff;
+      border-radius: 9999px;
+      padding: 6px 14px;
+      transition: all 0.15s ease-in-out;
+      transform: scale(1.03);
+    }
+
+    .nav-button-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 0;
+      border-radius: 9999px;
+      min-width: 90px;
+    }
+    #puzzles-app {
+      padding-bottom: 0px;
+      height: 100%;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+  </style>
+</head>
+
+<body>
+<div id="app-container" class="relative">
+  <div id="puzzles-app" class="h-full flex flex-col"></div>
+</div>
+
+<script>
+/* =========================================================
+   0) Utilities
+========================================================= */
+function escapeHtml(s) {
+  return (s || '').replace(/[&<>"']/g, (m) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+  }[m]));
+}
+function renderMarkdown(text) {
+  return (text || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+}
+function scrollToBottom() {
+  const chatContent = document.getElementById('chat-content');
+  if (chatContent) chatContent.scrollTop = chatContent.scrollHeight;
+}
+
+/* =========================================================
+   1) Layers + Steps
+========================================================= */
+const PuzzleLayer = {
+  ATTACHMENT: "Attachment (Layer 5)",
+  PROCESSING_STYLE: "Processing Style (Layer 14)",
+  PLAYFULNESS: "Playfulness/Novelty (Layer 13)",
+  BOUNDARIES: "Boundaries (Layer 9)",
+  CONFLICT: "Conflict (Layer 7)",
+  LIFE_STAGE: "Chapter/Capacity (Soft)"
+};
+
+const Sender = { USER: 'user', BOT: 'bot' };
+
+const ChatStep = {
+  NAME_INPUT: 'nameInput',
+  VIBE_CONFIRMATION: 'vibeConfirmation',
+  VIBE_CONFIRMATION_RETRY: 'vibeConfirmationRetry',
+  SCENARIO_MODE: 'scenarioMode', // NEW STEP
+  ADAPTIVE_PROBING: 'adaptiveProbing',
+  THIS_OR_THAT: 'thisOrThat',
+  SUMMARY_NUDGE: 'summaryNudge',
+  COMPLETE: 'complete'
+};
+
+/* =========================================================
+   2) SHOWS
+========================================================= */
+const SHOWS = [
+  {
+    id: "friends", name: "Friends", category: "SITCOM",
+    characters: [
+      { id:"chandler", displayName:"Chandler Bing", traits:["Humor-as-defense","Avoids vulnerability","Loyal once committed"], tags:["humor-shield","anxious-core","avoidant-behavior"], imageQuery:"Chandler Bing funny moment Friends" },
+      { id:"monica", displayName:"Monica Geller", traits:["Controlling","Perfectionist","High standards"], tags:["direct","high-standards","stability"], imageQuery:"Monica Geller funny moment Friends" },
+      { id:"ross", displayName:"Ross Geller", traits:["Romantic","Jealous","Overthinks"], tags:["overthinker","insecure","one-person-mindset"], imageQuery:"Ross Geller funny moment Friends" },
+      { id:"rachel", displayName:"Rachel Green", traits:["Growth arc","Avoidant when overwhelmed","Ambitious"], tags:["ambition","avoidant-under-stress","growth"], imageQuery:"Rachel Green funny moment Friends" },
+      { id:"joey", displayName:"Joey Tribbiani", traits:["Fun","Present","Avoids heavy talks"], tags:["playful","light-conflict","in-the-moment"], imageQuery:"Joey Tribbiani funny moment Friends" },
+      { id:"phoebe", displayName:"Phoebe Buffay", traits:["Quirky","Empathetic","Clear boundaries"], tags:["empathetic","quirky","boundaries"], imageQuery:"Phoebe Buffay funny moment Friends" },
+    ]
+  },
+  {
+    id:"himym", name:"How I Met Your Mother", category:"SITCOM",
+    characters: [
+      { id:"ted", displayName:"Ted Mosby", traits:["Hopeless romantic","Idealizes love","Struggles to let go"], tags:["romanticizer","anxious","idealization"], imageQuery:"Ted Mosby funny moment HIMYM" },
+      { id:"robin", displayName:"Robin Scherbatsky", traits:["Independent","Career-first","Fears settling"], tags:["avoidant","freedom","career"], imageQuery:"Robin Scherbatsky funny moment HIMYM" },
+      { id:"barney", displayName:"Barney Stinson", traits:["Player persona","Fears intimacy","Humor shield"], tags:["performance","avoidant","growth-to-vulnerable"], imageQuery:"Barney Stinson funny moment HIMYM" },
+      { id:"marshall", displayName:"Marshall Eriksen", traits:["Secure","Loyal","Family-oriented"], tags:["secure","loyal","steady"], imageQuery:"Marshall Eriksen funny moment HIMYM" },
+      { id:"lily", displayName:"Lily Aldrin", traits:["Nurturing","Impulsive","Can be controlling"], tags:["nurturing","control-risk","growth"], imageQuery:"Lily Aldrin funny moment HIMYM" },
+    ]
+  },
+  {
+    id:"office", name:"The Office", category:"SITCOM",
+    characters: [
+      { id:"jim", displayName:"Jim Halpert", traits:["Playful","Emotionally aware","Avoids direct conflict"], tags:["humor","conflict-avoidant","idealizes"], imageQuery:"Jim Halpert prank funny moment The Office" },
+      { id:"pam", displayName:"Pam Beesly", traits:["Kind","Hesitant","Deep commitment"], tags:["gentle","slow-mover","loyal"], imageQuery:"Pam Beesly funny moment The Office" },
+      { id:"michael", displayName:"Michael Scott", traits:["Needs approval","Poor boundaries","Big-hearted"], tags:["approval-seeking","boundary-issues","warm"], imageQuery:"Michael Scott funny moment The Office" },
+      { id:"dwight", displayName:"Dwight Schrute", traits:["Loyal","Rigid","Black-and-white"], tags:["rigid","intense","loyal"], imageQuery:"Dwight Schrute funny moment The Office" },
+      { id:"angela", displayName:"Angela Martin", traits:["Judgy","Rigid","Guarded"], tags:["guarded","rigid","moral-rules"], imageQuery:"Angela Martin funny moment The Office" },
+    ]
+  },
+  {
+    id:"modernfamily", name:"Modern Family", category:"SITCOM",
+    characters: [
+      { id:"phil", displayName:"Phil Dunphy", traits:["Playful","People-pleaser","Avoids heavy conflict"], tags:["playful","needs-validation","conflict-avoidant"], imageQuery:"Phil Dunphy funny moment Modern Family" },
+      { id:"claire", displayName:"Claire Dunphy", traits:["Responsible","Anxious","Wants order"], tags:["anxious","control","safety"], imageQuery:"Claire Dunphy funny moment Modern Family" },
+      { id:"jay", displayName:"Jay Pritchett", traits:["Reserved","Shows love by actions","Traditional"], tags:["acts-of-service","reserved","traditional"], imageQuery:"Jay Pritchett funny moment Modern Family" },
+      { id:"gloria", displayName:"Gloria Delgado-Pritchett", traits:["Expressive","Dramatic","Loyal"], tags:["big-emotions","protective","passionate"], imageQuery:"Gloria Pritchett funny moment Modern Family" },
+      { id:"mitchell", displayName:"Mitchell Pritchett", traits:["Overthinks","Cautious","Control"], tags:["overthinker","cautious","needs-control"], imageQuery:"Mitchell Pritchett funny moment Modern Family" },
+      { id:"cameron", displayName:"Cameron Tucker", traits:["Dramatic","Romantic","Needs validation"], tags:["validation","romantic","dramatic"], imageQuery:"Cameron Tucker funny moment Modern Family" },
+    ]
+  },
+  {
+    id:"bbt", name:"The Big Bang Theory", category:"SITCOM",
+    characters: [
+      { id:"sheldon", displayName:"Sheldon Cooper", traits:["Rigid","Routine-based","Low empathy"], tags:["rigid","low-emotional-awareness","routine"], imageQuery:"Sheldon Cooper funny moment Big Bang Theory" },
+      { id:"leonard", displayName:"Leonard Hofstadter", traits:["Approval-seeking","People-pleaser","Fears abandonment"], tags:["anxious","people-pleaser","abandonment-fear"], imageQuery:"Leonard Hofstadter funny moment Big Bang Theory" },
+      { id:"penny", displayName:"Penny", traits:["Social","Emotionally intuitive","Impulsive"], tags:["social","intuitive","impulsive"], imageQuery:"Penny funny moment Big Bang Theory" },
+      { id:"howard", displayName:"Howard Wolowitz", traits:["Insecure","Tries too hard","Grows"], tags:["insecure","performative","growth"], imageQuery:"Howard Wolowitz funny moment Big Bang Theory" },
+      { id:"raj", displayName:"Raj Koothrappali", traits:["Sensitive","Romantic","Fears rejection"], tags:["anxious","sensitive","rejection-fear"], imageQuery:"Raj Koothrappali funny moment Big Bang Theory" },
+    ]
+  },
+  {
+    id:"b99", name:"Brooklyn Nine-Nine", category:"SITCOM",
+    characters: [
+      { id:"jake", displayName:"Jake Peralta", traits:["Funny","Hates vulnerability","Growth arc"], tags:["humor-shield","immature","growth"], imageQuery:"Jake Peralta funny moment Brooklyn Nine-Nine" },
+      { id:"amy", displayName:"Amy Santiago", traits:["Perfectionist","Approval-seeking","Structured"], tags:["anxious","structured","planner"], imageQuery:"Amy Santiago funny moment Brooklyn Nine-Nine" },
+      { id:"rosa", displayName:"Rosa Diaz", traits:["Guarded","Loyal","Needs privacy"], tags:["guarded","loyal","autonomy"], imageQuery:"Rosa Diaz funny moment Brooklyn Nine-Nine" },
+      { id:"terry", displayName:"Terry Jeffords", traits:["Supportive","Family-focused","Wants harmony"], tags:["nurturing","harmony","soft-power"], imageQuery:"Terry Jeffords funny moment Brooklyn Nine-Nine" },
+      { id:"gina", displayName:"Gina Linetti", traits:["Sarcastic","Brand-first","Secret soft spots"], tags:["sarcasm","self-brand","soft-inside"], imageQuery:"Gina Linetti funny moment Brooklyn Nine-Nine" },
+    ]
+  },
+  {
+    id:"newgirl", name:"New Girl", category:"SITCOM",
+    characters: [
+      { id:"jess", displayName:"Jess Day", traits:["Quirky","Idealistic","Overinvests"], tags:["anxious","romantic","harmony"], imageQuery:"Jess Day funny moment New Girl" },
+      { id:"nick", displayName:"Nick Miller", traits:["Avoidant","Messy emotions","Loyal"], tags:["avoidant","low-planning","loyal"], imageQuery:"Nick Miller funny moment New Girl" },
+      { id:"schmidt", displayName:"Schmidt", traits:["Performative","Insecure","Craves validation"], tags:["performative","validation","control"], imageQuery:"Schmidt funny moment New Girl" },
+      { id:"cece", displayName:"Cece Parekh", traits:["Guarded","Independent","Needs consistency"], tags:["guarded","independent","consistency"], imageQuery:"Cece Parekh funny moment New Girl" },
+      { id:"winston", displayName:"Winston Bishop", traits:["Playful","Caring","Uses humor"], tags:["playful","humor","avoid-conflict"], imageQuery:"Winston Bishop funny moment New Girl" },
+    ]
+  },
+  {
+    id:"neverhaveiever", name:"Never Have I Ever", category:"TEEN",
+    characters: [
+      { id:"devi", displayName:"Devi Vishwakumar", traits:["Impulsive","Validation-seeking","Highs/lows"], tags:["anxious","impulsive","validation"], imageQuery:"Devi Vishwakumar funny moment Never Have I Ever" },
+      { id:"paxton", displayName:"Paxton Hall-Yoshida", traits:["Chill","Slow to open","Avoidant early"], tags:["avoidant-early","kind","image-aware"], imageQuery:"Paxton Hall Yoshida funny moment Never Have I Ever" },
+      { id:"ben", displayName:"Ben Gross", traits:["Competitive","Sarcastic","Guarded"], tags:["guarded","overthinker","loyal-when-safe"], imageQuery:"Ben Gross funny moment Never Have I Ever" },
+      { id:"aneesa", displayName:"Aneesa Qureshi", traits:["Peacemaker","Sensitive inside","Values acceptance"], tags:["peacemaker","sensitive","acceptance"], imageQuery:"Aneesa Qureshi funny moment Never Have I Ever" },
+    ]
+  },
+  {
+    id:"sexeducation", name:"Sex Education", category:"TEEN",
+    characters: [
+      { id:"otis", displayName:"Otis Milburn", traits:["Overthinks","Good listener","Awkward expressing needs"], tags:["overthinker","listener","avoid-conflict"], imageQuery:"Otis Milburn funny moment Sex Education" },
+      { id:"maeve", displayName:"Maeve Wiley", traits:["Guarded","Independent","Trust issues"], tags:["guarded","depth","trust-issues"], imageQuery:"Maeve Wiley funny moment Sex Education" },
+      { id:"eric", displayName:"Eric Effiong", traits:["Expressive","Needs visibility","Deeply emotional"], tags:["expressive","needs-acceptance","joyful"], imageQuery:"Eric Effiong funny moment Sex Education" },
+      { id:"adam", displayName:"Adam Groff", traits:["Repressed","Slow growth","Loyal when committed"], tags:["repressed","growth","loyal"], imageQuery:"Adam Groff funny moment Sex Education" },
+      { id:"ruby", displayName:"Ruby Matthews", traits:["Image-focused early","Vulnerable under","Needs reassurance"], tags:["image","vulnerable","reassurance"], imageQuery:"Ruby Matthews funny moment Sex Education" },
+    ]
+  },
+  {
+    id:"heartstopper", name:"Heartstopper", category:"TEEN",
+    characters: [
+      { id:"charlie", displayName:"Charlie Spring", traits:["Sensitive","People-pleaser","Fears abandonment"], tags:["anxious","people-pleaser","needs-consistency"], imageQuery:"Charlie Spring Heartstopper moment" },
+      { id:"nick", displayName:"Nick Nelson", traits:["Kind","Honest later","Mutual care"], tags:["kind","steady","mutual-care"], imageQuery:"Nick Nelson Heartstopper moment" },
+      { id:"tao", displayName:"Tao Xu", traits:["Protective","Resistant to change","Can be controlling"], tags:["protective","control-risk","loyal"], imageQuery:"Tao Xu Heartstopper moment" },
+      { id:"elle", displayName:"Elle Argent", traits:["Thoughtful","Belonging","Values safety"], tags:["safe-space","open-minded","artsy"], imageQuery:"Elle Argent Heartstopper moment" },
+    ]
+  },
+  {
+    id:"toalltheboys", name:"To All the Boys I've Loved Before", category:"ROMCOM",
+    characters: [
+      { id:"larajean", displayName:"Lara Jean Covey", traits:["Fantasy-oriented","Internalizes","Processes via writing"], tags:["romantic","internalizer","conflict-avoidant"], imageQuery:"Lara Jean Covey moment To All the Boys" },
+      { id:"peter", displayName:"Peter Kavinsky", traits:["Confident","Secretly sensitive","Needs trust"], tags:["trust","sensitive","outgoing"], imageQuery:"Peter Kavinsky moment To All the Boys" },
+      { id:"johnambrose", displayName:"John Ambrose", traits:["Gentle","Reliable","Great listener"], tags:["steady","listener","calm"], imageQuery:"John Ambrose moment To All the Boys" },
+    ]
+  },
+  {
+    id:"gilmoregirls", name:"Gilmore Girls", category:"DRAMA",
+    characters: [
+      { id:"lorelai", displayName:"Lorelai Gilmore", traits:["Humor dodge","Independent","Commitment-shy"], tags:["humor","independent","commitment-shy"], imageQuery:"Lorelai Gilmore funny moment Gilmore Girls" },
+      { id:"rory", displayName:"Rory Gilmore", traits:["Indecisive","Avoids conflict","Torn between safety/excitement"], tags:["avoid-conflict","indecisive","idealistic"], imageQuery:"Rory Gilmore funny moment Gilmore Girls" },
+      { id:"luke", displayName:"Luke Danes", traits:["Acts of service","Loyal","Hates change"], tags:["acts-of-service","loyal","stability"], imageQuery:"Luke Danes funny moment Gilmore Girls" },
+      { id:"jess", displayName:"Jess Mariano", traits:["Broody","Avoidant","Low communication"], tags:["avoidant","broody","deep-feelings"], imageQuery:"Jess Mariano moment Gilmore Girls" },
+    ]
+  },
+  {
+    id:"gossipgirl", name:"Gossip Girl", category:"DRAMA",
+    characters: [
+      { id:"serena", displayName:"Serena van der Woodsen", traits:["Impulsive","Flees when hard","Guilt-prone"], tags:["impulsive","avoidant-escape","guilt"], imageQuery:"Serena van der Woodsen moment Gossip Girl" },
+      { id:"blair", displayName:"Blair Waldorf", traits:["Strategic","Tests people","Craves loyalty"], tags:["control","tests","loyalty"], imageQuery:"Blair Waldorf iconic moment Gossip Girl" },
+      { id:"dan", displayName:"Dan Humphrey", traits:["Judgmental","Resentful when hurt","Outsider romantic"], tags:["resentment","idealization","outsider"], imageQuery:"Dan Humphrey moment Gossip Girl" },
+      { id:"chuck", displayName:"Chuck Bass", traits:["Avoidant","Learns vulnerability slowly","Extreme loyalty"], tags:["avoidant","intensity","slow-growth"], imageQuery:"Chuck Bass iconic moment Gossip Girl" },
+      { id:"nate", displayName:"Nate Archibald", traits:["Passive","Avoids conflict","Goes with flow"], tags:["passive","avoid-conflict","easygoing"], imageQuery:"Nate Archibald moment Gossip Girl" },
+    ]
+  },
+  {
+    id:"strangerthings", name:"Stranger Things", category:"TEEN",
+    characters: [
+      { id:"mike", displayName:"Mike Wheeler", traits:["Loyal","Intense","Fixates on one person"], tags:["loyal","intense","one-person-focus"], imageQuery:"Mike Wheeler Stranger Things moment" },
+      { id:"eleven", displayName:"Eleven", traits:["Trauma","Protective","Learning emotions"], tags:["trauma","protective","growing"], imageQuery:"Eleven Stranger Things moment" },
+      { id:"will", displayName:"Will Byers", traits:["Sensitive","Feels invisible","Fears rejection"], tags:["sensitive","rejection-fear","loyal"], imageQuery:"Will Byers Stranger Things moment" },
+      { id:"max", displayName:"Max Mayfield", traits:["Guarded","Independent","Slow to trust"], tags:["guarded","independent","actions-matter"], imageQuery:"Max Mayfield Stranger Things moment" },
+      { id:"steve", displayName:"Steve Harrington", traits:["Protective arc","Charming","Learns accountability"], tags:["growth","protective","accountability"], imageQuery:"Steve Harrington Stranger Things funny moment" },
+    ]
+  },
+  {
+    id:"summeriturnedpretty", name:"The Summer I Turned Pretty", category:"TEEN",
+    characters: [
+      { id:"belly", displayName:"Belly Conklin", traits:["Indecisive","Lives in feelings","Wants to be chosen"], tags:["romantic","indecisive","validation"], imageQuery:"Belly Conklin moment The Summer I Turned Pretty" },
+      { id:"conrad", displayName:"Conrad Fisher", traits:["Brooding","Avoidant","Internalizes"], tags:["avoidant","broody","internalizer"], imageQuery:"Conrad Fisher moment The Summer I Turned Pretty" },
+      { id:"jeremiah", displayName:"Jeremiah Fisher", traits:["Open","Emotionally available","Hates secrets"], tags:["open","closeness","honesty"], imageQuery:"Jeremiah Fisher moment The Summer I Turned Pretty" },
+    ]
+  },
+  {
+    id:"outerbanks", name:"Outer Banks", category:"TEEN",
+    characters: [
+      { id:"johnb", displayName:"John B.", traits:["Reckless","Ride-or-die","Feelings over logic"], tags:["reckless","loyal","impulsive"], imageQuery:"John B Outer Banks moment" },
+      { id:"sarah", displayName:"Sarah Cameron", traits:["Status vs authenticity","Seeks real connection","Rebels control"], tags:["authenticity","conflicted","connection"], imageQuery:"Sarah Cameron Outer Banks moment" },
+      { id:"jj", displayName:"JJ Maybank", traits:["Chaotic","Trauma","Masks hurt"], tags:["chaotic","trauma","humor-mask"], imageQuery:"JJ Maybank Outer Banks moment" },
+      { id:"kiara", displayName:"Kiara Carrera", traits:["Principled","Stubborn","Needs aligned values"], tags:["values","stubborn","aligned"], imageQuery:"Kiara Outer Banks moment" },
+    ]
+  },
+  {
+    id:"tvd", name:"The Vampire Diaries", category:"DRAMA",
+    characters: [
+      { id:"elena", displayName:"Elena Gilbert", traits:["Caretaker","Self-sacrificing","Romantic"], tags:["caretaker","romantic","self-sacrifice"], imageQuery:"Elena Gilbert Vampire Diaries moment" },
+      { id:"stefan", displayName:"Stefan Salvatore", traits:["Gentle","Guilt-ridden","Suppresses dark side"], tags:["gentle","guilt","controlled"], imageQuery:"Stefan Salvatore Vampire Diaries moment" },
+      { id:"damon", displayName:"Damon Salvatore", traits:["Avoidant","Tests people","Deep love under"], tags:["avoidant","intense","tests"], imageQuery:"Damon Salvatore Vampire Diaries iconic moment" },
+      { id:"caroline", displayName:"Caroline Forbes", traits:["Perfectionist","Anxious","Growth-oriented"], tags:["anxious","growth","loyal"], imageQuery:"Caroline Forbes Vampire Diaries moment" },
+    ]
+  },
+];
+
+/* =========================================================
+   3) Vibe Deck
+========================================================= */
+const GAME1_CUISINES = [
+  { id: 'north_indian', label: 'North Indian' },
+  { id: 'south_indian', label: 'South Indian' },
+  { id: 'mughlai', label: 'Mughlai' },
+  { id: 'italian', label: 'Italian' },
+  { id: 'chinese', label: 'Chinese' },
+  { id: 'korean', label: 'Korean' },
+  { id: 'japanese', label: 'Japanese' },
+  { id: 'thai', label: 'Thai' },
+  { id: 'mexican', label: 'Mexican' },
+  { id: 'middle_eastern', label: 'Middle Eastern' }
+];
+
+const GAME1_ACTIVITIES = [
+  { id: 'cinema', label: 'Watching a movie at the cinema', emoji: '🍿' },
+  { id: 'museum', label: 'Visiting a museum or art gallery', emoji: '🖼️' },
+  { id: 'hiking', label: 'Hiking or nature walk', emoji: '🌄' },
+  { id: 'picnic', label: 'Having a picnic outdoors', emoji: '🍉' },
+  { id: 'cooking', label: 'Cooking a meal together', emoji: '🍳' },
+  { id: 'bike', label: 'Going for a bike ride', emoji: '🚲' },
+  { id: 'boardgames', label: 'Playing board games', emoji: '🎲' },
+  { id: 'bowling', label: 'Going bowling', emoji: '🎳' },
+  { id: 'painting', label: 'Painting or doing crafts', emoji: '🎨' },
+  { id: 'festival', label: 'Attending a festival or cultural event', emoji: '🎉' },
+  { id: 'dancing', label: 'Dancing (salsa, swing, etc.)', emoji: '💃' },
+  { id: 'vr', label: 'Trying out virtual reality gaming', emoji: '🎮' },
+  { id: 'coffee', label: 'Going for a coffee date', emoji: '☕' },
+  { id: 'pickleball', label: 'Playing pickleball', emoji: '🏓' },
+  { id: 'badminton', label: 'Badminton match', emoji: '🏸' },
+  { id: 'run_club', label: 'Going for a run or jog together in the park (Run Club)', emoji: '🏃' },
+  { id: 'workout', label: 'Working out together', emoji: '🏋️' }
+];
+
+const VIBE_CARDS = [
+  { id:"calm", label:"Calm", tags:["steady","low-drama"] },
+  { id:"chaotic", label:"Chaotic", tags:["spontaneous","high-energy"] },
+  { id:"loyal", label:"Loyal", tags:["commitment","consistency"] },
+  { id:"guarded", label:"Guarded", tags:["slow-to-open","privacy"] },
+  { id:"curious", label:"Curious", tags:["novelty","explorer"] },
+  { id:"overthinker", label:"Overthinker", tags:["anxious","rumination"] },
+  { id:"blunt", label:"Blunt", tags:["direct","no-games"] },
+  { id:"soft", label:"Soft", tags:["tender","needs-safety"] },
+  { id:"homebody", label:"Homebody", tags:["cozy","ritual"] },
+  { id:"explorer", label:"Explorer", tags:["adventure","novelty"] },
+];
+
+/* =========================================================
+   4) Probes (Fallback if no scenarios)
+========================================================= */
+const PROBE_MODULES = [
+  {
+    layer: PuzzleLayer.ATTACHMENT,
+    text: "When someone you like goes quiet on text, what do you honestly do first?",
+    replies: ["Overthink and double-text 😅", "Wait it out, they’ll reply", "Also go quiet", "Joke/meme my way through it"],
+    tags: {
+      "Overthink and double-text 😅": ["anxious-leaning","needs-reassurance"],
+      "Wait it out, they’ll reply": ["secure-leaning","grounded"],
+      "Also go quiet": ["avoidant-leaning","needs-space"],
+      "Joke/meme my way through it": ["humor-shield","distractor"]
+    }
+  },
+  {
+    layer: PuzzleLayer.PROCESSING_STYLE,
+    text: "If you and your person had a small fight, what helps you feel okay again?",
+    replies: ["Talk it out soon", "Space first, then talk", "Do something fun together and forget it", "I shut down tbh"],
+    tags: {
+      "Talk it out soon": ["collaborative-fixer","direct"],
+      "Space first, then talk": ["solo-processor","needs-space"],
+      "Do something fun together and forget it": ["distractor","avoidance-risk"],
+      "I shut down tbh": ["shutdown","high-conflict-risk"]
+    }
+  },
+  {
+    layer: PuzzleLayer.PLAYFULNESS,
+    text: "Perfect Saturday with your future match: what’s the vibe?",
+    replies: ["Chilling in bed + food + shows", "Exploring new places", "Friends + social plans", "Hobbies / solo + then meet up"],
+    tags: {
+      "Chilling in bed + food + shows": ["cozy-stabilizer","homebody-focus"],
+      "Exploring new places": ["novelty-explorer","adventure-seeker"],
+      "Friends + social plans": ["social","community"],
+      "Hobbies / solo + then meet up": ["independent","needs-space"]
+    }
+  },
+  {
+    layer: PuzzleLayer.BOUNDARIES,
+    text: "What’s the fastest way someone can make you feel unsafe emotionally?",
+    replies: ["Ignoring me / disappearing", "Twisting my words", "Being rude / humiliating", "Breaking trust (small lies)"],
+    tags: {
+      "Ignoring me / disappearing": ["needs-consistency","abandonment-sensitivity"],
+      "Twisting my words": ["needs-fairness","conflict-sensitivity"],
+      "Being rude / humiliating": ["respect-boundary","dignity"],
+      "Breaking trust (small lies)": ["trust-boundary","integrity"]
+    }
+  }
+];
+
+/* =========================================================
+   4.5) Character Scenarios (The "In-Character" Layer)
+========================================================= */
+const CHARACTER_SCENARIOS = {
+  // --- FRIENDS ---
+  "friends:monica": {
+    text: "Scenario: It’s Phoebe’s wedding, a blizzard just hit, and the planner quit. Phoebe is spiraling. You are Monica. What do you do?",
+    options: [
+      { text: "Headset on. I have a backup plan for the backup plan.", tags: ["director", "high-dominance", "structured"] },
+      { text: "Breathe. We're going to make this a snowy miracle.", tags: ["soother", "optimist", "high-valence"] },
+      { text: "I'll go scream in the freezer, then fix it.", tags: ["solo-processor", "stress-internalizer"] }
+    ]
+  },
+  "friends:ross": {
+    text: "Scenario: You and Rachel just had a massive fight. You are hurt and sitting at a bar. What’s the move?",
+    options: [
+      { text: "I need to go back and resolve this tonight.", tags: ["fixer", "anxious-attachment", "collaborative"] },
+      { text: "Phone off. I need space to process my anger alone.", tags: ["solo-processor", "avoidant-stress", "bottled"] },
+      { text: "Write a long letter explaining exactly why I'm right.", tags: ["defensive", "need-to-be-understood", "rigid"] }
+    ]
+  },
+  "friends:chandler": {
+    text: "Scenario: Things are getting too emotional and serious in a conversation. Your instinct is...",
+    options: [
+      { text: "Make a joke to break the tension immediately.", tags: ["distractor", "humor-shield", "safety-in-levity"] },
+      { text: "Get uncomfortable and physically leave the room.", tags: ["avoidant", "flight-response"] },
+      { text: "Listen, but panic internally.", tags: ["anxious-internalizer", "passive"] }
+    ]
+  },
+  "friends:rachel": {
+    text: "Scenario: You’ve been offered a dream fashion job in Paris, but your life—and Ross—is in New York.",
+    options: [
+      { text: "I'm going. I’ve worked too hard to let a relationship hold back my career.", tags: ["coach", "structural-priority", "career-focus"] },
+      { text: "I’ll stay if he asks me to. I just need to know he wants me.", tags: ["healer", "anxious", "needs-validation"] },
+      { text: "Talk to everyone I love to see how *they* feel.", tags: ["collaborative", "social-processor", "external-validation"] }
+    ]
+  },
+  "friends:joey": {
+    text: "Scenario: You realize you have feelings for a close friend, but you’re scared it will ruin the group dynamic.",
+    options: [
+      { text: "Eat pizza and pretend everything is fine.", tags: ["distractor", "avoidant", "comfort-seeking"] },
+      { text: "I have to tell her. I can't be inauthentic.", tags: ["explorer", "authentic", "risk-taker"] },
+      { text: "Ask Chandler what to do.", tags: ["negotiator", "dependent", "low-dominance"] }
+    ]
+  },
+  "friends:phoebe": {
+    text: "Scenario: Your birth mother just appeared, and she’s nothing like you imagined.",
+    options: [
+      { text: "The universe has a plan! I'll write a song about it.", tags: ["soother", "high-valence", "optimist"] },
+      { text: "I need to sit by the fountain alone and process.", tags: ["solo-processor", "reflective", "deep"] },
+      { text: "Ask a million weird questions to test her.", tags: ["self-explorer", "probing", "curious"] }
+    ]
+  },
+
+  // --- MODERN FAMILY ---
+  "modernfamily:phil": {
+    text: "Scenario: You completely forgot your anniversary until Claire hands you a gift. You are Phil. Go.",
+    options: [
+      { text: "Admit it immediately and apologize profusely.", tags: ["secure", "repair-focused", "honest"] },
+      { text: "Perform a magic trick to distract her while I think.", tags: ["distractor", "chaos-energy", "pleaser"] },
+      { text: "Pretend I didn't forget and panic-fix it.", tags: ["performing", "fear-of-conflict", "people-pleaser"] }
+    ]
+  },
+  "modernfamily:claire": {
+    text: "Scenario: Phil bought a dangerous alpaca without asking. It's in the living room.",
+    options: [
+      { text: "I am the only one who cares about safety! It goes!", tags: ["director", "controlling", "rigid"] },
+      { text: "I’ll let them keep it but resent it silently all day.", tags: ["martyr", "passive-aggressive", "bottler"] },
+      { text: "Family meeting. We need to discuss the logistics.", tags: ["regulator", "structured", "logic-first"] }
+    ]
+  },
+  "modernfamily:jay": {
+    text: "Scenario: Gloria wants to bring a loud, chaotic tradition into your quiet Sunday.",
+    options: [
+      { text: "No. Sundays are for quiet. Why change it?", tags: ["stabilizer", "routine", "rigid"] },
+      { text: "Fine, but I'm sitting in my chair and ignoring it.", tags: ["bottled-avoidant", "stonewalling", "passive"] },
+      { text: "Negotiate a 'volume limit' but try it for her.", tags: ["regulator", "boundary-setter", "compromise"] }
+    ]
+  },
+  "modernfamily:gloria": {
+    text: "Scenario: You think Jay is being too hard on Manny's artistic hobbies.",
+    options: [
+      { text: "Jay! You are crushing his spirit! He needs support!", tags: ["healer", "empathetic", "protective"] },
+      { text: "I buy him the most expensive supplies to prove a point.", tags: ["explorer", "reactive", "high-arousal"] },
+      { text: "We sit down and talk feelings until everyone cries.", tags: ["collaborative", "emotional", "fixer"] }
+    ]
+  },
+
+  // --- HIMYM ---
+  "himym:ted": {
+    text: "Scenario: You met the 'perfect' girl, but she hates your favorite movie and thinks architecture is boring.",
+    options: [
+      { text: "It’s a sign. If she doesn't get it, she's not The One.", tags: ["romanticizer", "idealist", "rigid-standards"] },
+      { text: "I’ll stop talking about buildings to make it work.", tags: ["people-pleaser", "self-abandonment", "anxious"] },
+      { text: "We need a 3-hour deep talk to find common ground.", tags: ["collaborative-fixer", "intense", "connector"] }
+    ]
+  },
+  "himym:barney": {
+    text: "Scenario: You found an embarrassing video of the girl you like. She begs you not to watch it.",
+    options: [
+      { text: "Watch it immediately. 'Legendary' requires chaos.", tags: ["explorer", "boundary-pusher", "chaos"] },
+      { text: "I stop. If she says no, I respect the boundary.", tags: ["secure", "respectful", "growth"] },
+      { text: "Watch it secretly to understand her better.", tags: ["curious", "intrusive", "rationalizer"] }
+    ]
+  },
+  "himym:marshall": {
+    text: "Scenario: Lilly tells you she’s moving to San Francisco for art, breaking off the engagement.",
+    options: [
+      { text: "If you leave, we’re done. Commitment is #1.", tags: ["traditionalist", "structural", "rigid"] },
+      { text: "Go find yourself. I’ll be here waiting.", tags: ["hype-person", "secure-anxious", "loyal"] },
+      { text: "I'm going to eat ice cream and not think for a week.", tags: ["distractor", "avoidant-cope", "comfort"] }
+    ]
+  },
+
+  // --- THE OFFICE ---
+  "office:jim": {
+    text: "Scenario: You love your best friend (Pam), but she's engaged. You're transferring branches.",
+    options: [
+      { text: "Tell her everything. I can't leave with secrets.", tags: ["authentic", "risk-taker", "secure"] },
+      { text: "Say nothing. Move on and start over.", tags: ["avoidant", "self-protective", "solo-processor"] },
+      { text: "Tell her, but play it off as 'just friends' if she panics.", tags: ["people-pleaser", "soft-boundaries", "negotiator"] }
+    ]
+  },
+  "office:michael": {
+    text: "Scenario: Corporate is yelling at you about numbers. The vibe in the office is bad.",
+    options: [
+      { text: "Throw a party immediately to boost morale!", tags: ["distractor", "emotion-led", "avoider"] },
+      { text: "Go to my office and cry alone.", tags: ["volatile", "sensitive", "internalizer"] },
+      { text: "Force everyone to brainstorm a solution together.", tags: ["collaborative", "dependent", "group-think"] }
+    ]
+  },
+  "office:leonard": { // Mapped from BBT logic in prompt but keeping structure
+      text: "Scenario: Sheldon wants to add a rigid rule to the Roommate Agreement.",
+      options: [
+        { text: "Agree to avoid the argument.", tags: ["healer", "poor-boundaries", "peacekeeper"] },
+        { text: "Explain why it doesn't work and compromise.", tags: ["regulator", "healthy-boundaries", "logic"] },
+        { text: "Ignore it and do what I want secretly.", tags: ["performing", "passive-resistance", "avoidant"] }
+      ]
+  },
+
+  // --- BROOKLYN 99 ---
+  "b99:jake": {
+    text: "Scenario: It's the Halloween Heist. You want to win, but you also want to propose to Amy.",
+    options: [
+      { text: "The Heist comes first! Romance later.", tags: ["explorer", "playful", "distractor"] },
+      { text: "Rig the heist so the proposal IS the win.", tags: ["romantic", "creative", "integrator"] },
+      { text: "Get too nervous and let Holt win.", tags: ["anxious", "overthinker", "insecure"] }
+    ]
+  },
+  "b99:amy": {
+    text: "Scenario: You're stressed about an inspection. Jake is making jokes.",
+    options: [
+      { text: "I need a binder and a plan, not jokes!", tags: ["structured", "anxious", "planner"] },
+      { text: "Laugh along, but do the work myself secretly.", tags: ["caretaker", "competent", "solo"] },
+      { text: "Tell him to leave so I can focus.", tags: ["boundary-setter", "solo-processor", "serious"] }
+    ]
+  },
+
+  // --- GILMORE GIRLS ---
+  "gilmoregirls:lorelai": {
+    text: "Scenario: Luke is being grumpy and won't say why. The diner is tense.",
+    options: [
+      { text: "Talk at him at 100mph until he cracks.", tags: ["pusher", "anxious-pursuer", "verbal"] },
+      { text: "Give him coffee and space. He'll come around.", tags: ["secure", "patient", "reader"] },
+      { text: "Go work late at the Inn to avoid the mood.", tags: ["avoidant", "distractor", "flight"] }
+    ]
+  },
+  "gilmoregirls:rory": {
+    text: "Scenario: A boss tells you that you 'don't have it'. You are devastated.",
+    options: [
+      { text: "Drop everything. I need to find a new path.", tags: ["reactive", "identity-crisis", "flight"] },
+      { text: "Do something reckless (steal a yacht).", tags: ["acting-out", "rebellious", "chaos"] },
+      { text: "Talk to my mom for 5 hours to fix it.", tags: ["collaborative", "dependent", "processor"] }
+    ]
+  },
+  "gilmoregirls:luke": {
+    text: "Scenario: Lorelai wants to renovate the diner with trendy stuff.",
+    options: [
+      { text: "No. The diner is fine. Don't change it.", tags: ["stabilizer", "routine", "resistant"] },
+      { text: "I'll do one thing, but the rest stays.", tags: ["regulator", "boundaries", "compromise"] },
+      { text: "Let her do it. Her smile is worth it.", tags: ["soother", "empathetic", "giving"] }
+    ]
+  },
+
+  // --- SEX EDUCATION ---
+  "sexeducation:otis": {
+    text: "Scenario: You and Maeve disagree on how to help a client. Tension is high.",
+    options: [
+      { text: "Sit down and talk through the logic.", tags: ["communicator", "rational", "fixer"] },
+      { text: "I need a walk. I can't think when we argue.", tags: ["solo-processor", "sensitive", "overwhelmed"] },
+      { text: "Just drop it and go get food.", tags: ["conflict-avoidant", "peacekeeper", "passive"] }
+    ]
+  },
+  "sexeducation:maeve": {
+    text: "Scenario: You got into a program in America, but Otis just said he loves you.",
+    options: [
+      { text: "I can't stay for a boy. Career first.", tags: ["coach", "career-focus", "independent"] },
+      { text: "I'll go but write every day. We're solid.", tags: ["hype-person", "shared-meaning", "committed"] },
+      { text: "Shut down and act cold so leaving is easier.", tags: ["bottled-avoidant", "defensive", "fear"] }
+    ]
+  },
+  "sexeducation:eric": {
+    text: "Scenario: Adam wants to keep your relationship secret. You want to be proud.",
+    options: [
+      { text: "I can't hide. You're with me or in my way.", tags: ["explorer", "authentic", "unapologetic"] },
+      { text: "I'll wait. I can help him heal.", tags: ["healer", "patient", "fixer"] },
+      { text: "Find a middle ground. Private but not hidden.", tags: ["synthesizer", "negotiator", "flexible"] }
+    ]
+  },
+
+  // --- BIG BANG THEORY ---
+  "bbt:sheldon": {
+    text: "Scenario: Amy wants to change Date Night from Thai to Italian.",
+    options: [
+      { text: "The contract says Thai. No deviation.", tags: ["builder", "routine", "rigid"] },
+      { text: "Only if we research the best Italian place first.", tags: ["regulator", "control", "preparation"] },
+      { text: "Fine, but I will be visibly uncomfortable.", tags: ["bottled-avoidant", "protest", "passive"] }
+    ]
+  },
+  "bbt:penny": {
+    text: "Scenario: Leonard is upset you didn't think his physics paper was exciting.",
+    options: [
+      { text: "Let's get a drink and stop talking science.", tags: ["distractor", "fun-focused", "avoidant"] },
+      { text: "I'll try to read it again to support you.", tags: ["soother", "growth-openness", "effort"] },
+      { text: "Tell him the truth: it was boring.", tags: ["realist", "blunt", "authentic"] }
+    ]
+  },
+  "bbt:leonard": {
+      text: "Scenario: Comic-Con tickets just dropped, but you promised Penny a spa weekend.",
+      options: [
+          { text: "Spa. A promise is a promise.", tags: ["healer", "boundaries", "loyal"] },
+          { text: "Convince Penny Comic-Con is 'cultural'.", tags: ["coach", "persuasive", "rationalizer"] },
+          { text: "Lie and say I'm sick.", tags: ["performing", "avoidant", "dishonest"] }
+      ]
+  },
+
+  // --- NEVER HAVE I EVER ---
+  "neverhaveiever:devi": {
+      text: "Scenario: You are accidentally dating two people and they are both at your door.",
+      options: [
+          { text: "Lie my way out with a crazy story.", tags: ["distractor", "chaos", "panic"] },
+          { text: "Freeze and wait for them to figure it out.", tags: ["bottled-avoidant", "stonewall", "passive"] },
+          { text: "Come clean. I messed up.", tags: ["self-explorer", "repair", "authentic"] }
+      ]
+  },
+  "neverhaveiever:paxton": {
+      text: "Scenario: Everyone thinks you're dating Devi just for homework help.",
+      options: [
+          { text: "Prove them wrong by actually studying.", tags: ["self-explorer", "growth", "effort"] },
+          { text: "Ignore them. Go for a swim.", tags: ["distractor", "chill", "unbothered"] },
+          { text: "Hold her hand in public. Take charge.", tags: ["director", "dominant", "action"] }
+      ]
+  },
+  
+  // --- GOSSIP GIRL ---
+  "gossipgirl:blair": {
+      text: "Scenario: You found a guy who is perfect on paper but lacks ambition.",
+      options: [
+          { text: "Mold him into who I need him to be.", tags: ["maximizer", "idealist", "controlling"] },
+          { text: "Accept him. Connection > Resume.", tags: ["realist", "authentic", "grounded"] },
+          { text: "Date him but keep looking.", tags: ["maximizer", "insecure", "strategy"] }
+      ]
+  },
+  "gossipgirl:dan": {
+      text: "Scenario: You are at a gala where you feel like an outsider.",
+      options: [
+          { text: "Write a scathing article about it later.", tags: ["regulator", "resentful", "observer"] },
+          { text: "Pretend to be someone I'm not to fit in.", tags: ["maximizer", "performing", "inauthentic"] },
+          { text: "Remind my date every 5 mins I'm from Brooklyn.", tags: ["traditionalist", "insecure", "identity"] }
+      ]
+  },
+
+  // --- STRANGER THINGS ---
+  "strangerthings:mike": {
+      text: "Scenario: Eleven is pulling away to deal with her powers.",
+      options: [
+          { text: "Call her every night. I need to know she's there.", tags: ["anxious", "healer", "clinging"] },
+          { text: "Demand we talk face-to-face right now.", tags: ["director", "intense", "pursuer"] },
+          { text: "Trust her. Focus on the mission.", tags: ["regulator", "secure", "focused"] }
+      ]
+  }
+};
+
+/* =========================================================
+   5) ViewModel
+========================================================= */
+class AppViewModel {
+  constructor() {
+    this.subscribers = [];
+
+    this.screen = 'logo'; // logo | form | game1 | game2 | chat | summary | map | profile
+    this.selectedTab = 'profile'; // profile | map (legacy, kept for compatibility)
+    this.previousScreen = null; // Track previous screen for back navigation
+    this.ui = {
+      profileOpen: false // Profile overlay state
+    };
+
+    this.formAnswers = null;
+    this.game1 = {
+      cuisines: [],
+      activities: [],
+      idealCombo: { cuisine: '', activity: '' },
+      step: 'cuisines' // 'cuisines' | 'activities' | 'combo'
+    };
+    this.game2 = { 
+      selectedShows: [],
+      showQueue: [],
+      currentShowIndex: 0,
+      currentShowId: null,
+      activeShowIndex: 0,
+      activeCharacterId: null,
+      step: 'pickShows', // 'pickShows' | 'pickCharacter' | 'scenario' | 'nextShowChoice' | 'done'
+      answers: []
+    };
+
+    this.messages = [];
+    this.availableQuickReplies = null;
+    this.userName = "";
+
+    this.scenarioQueue = []; // Queue for character scenarios
+    this.currentStep = ChatStep.NAME_INPUT;
+    
+    this.probeIndex = 0;
+    this.probeResults = {};
+
+    this.layerConfidence = {
+      [PuzzleLayer.ATTACHMENT]: 0.15,
+      [PuzzleLayer.PROCESSING_STYLE]: 0.15,
+      [PuzzleLayer.PLAYFULNESS]: 0.15,
+      [PuzzleLayer.BOUNDARIES]: 0.15,
+    };
+
+    this.devControlsEnabled = true;
+    this.integrityScore = 8;
+
+    this.thisOrThatIndex = 0;
+    this.thisOrThatAnswers = [];
+
+    this._pushBot("Welcome to PUZZLES. Tap start when you’re ready. ✨");
+  }
+
+  subscribe(cb) { this.subscribers.push(cb); cb(this); }
+  notify() { this.subscribers.forEach(cb => cb(this)); }
+
+  go(screen) { 
+    if (this.screen !== screen) {
+      this.previousScreen = this.screen;
+    }
+    this.screen = screen; 
+    this.notify(); 
+  }
+
+  _pushBot(text, replies=null, layer=null) {
+    this.messages.push({ sender: Sender.BOT, text, quickReplyOptions: replies, relatedLayer: layer });
+    this.availableQuickReplies = replies;
+  }
+  _pushUser(text, isChip=false, layer=null) {
+    this.messages.push({ sender: Sender.USER, text, isQuickReplySelection: isChip, relatedLayer: layer });
+    this.availableQuickReplies = null;
+  }
+
+  getLowestConfidenceLayers(n=2) {
+    const entries = Object.entries(this.layerConfidence).sort((a,b)=>a[1]-b[1]);
+    return entries.slice(0,n).map(([k])=>k);
+  }
+  getAllCharacters() {
+    const all = [];
+    SHOWS.forEach(show => show.characters.forEach(ch => all.push({
+      ...ch,
+      showId: show.id,
+      showName: show.name,
+      category: show.category,
+    })));
+    return all;
+  }
+
+  getRecommendedCharacters(limit=8) {
+    const signals = new Set();
+
+    if (this.formAnswers) {
+      const dp = this.formAnswers.datingPhase;
+      if (dp === 'sidequest') signals.add('avoidant');
+      if (dp === 'main-story') signals.add('commitment');
+
+      const cap = this.formAnswers.capacity;
+      if (cap === 'soft-launch') signals.add('guarded');
+      if (cap === 'make-time') signals.add('loyal');
+
+      const intim = this.formAnswers.intimacy;
+      if (intim === 'deep-talks') signals.add('anxious');
+      if (intim === 'fun-outings') signals.add('novelty');
+      if (intim === 'cozy-home') signals.add('cozy');
+      if (intim === 'independent-memes') signals.add('needs-space');
+
+      const c = this.formAnswers.conflict;
+      if (c === 'fix-now') signals.add('direct');
+      if (c === 'space-then-talk') signals.add('needs-space');
+      if (c === 'spiral') signals.add('overthinker');
+      if (c === 'distract-friends') signals.add('distractor');
+
+      const ick = this.formAnswers.ick;
+      if (ick === 'ghosting-dry') signals.add('needs-consistency');
+      if (ick === 'jealous-controlling') signals.add('autonomy');
+      if (ick === 'rude-small') signals.add('dignity');
+      if (ick === 'disrespect-time') signals.add('respect-boundary');
+    }
+
+    this.game1.selected.forEach(id => {
+      const card = VIBE_CARDS.find(c => c.id === id);
+      if (card) card.tags.forEach(t => signals.add(t));
+    });
+
+    const lowestLayers = this.getLowestConfidenceLayers(2);
+    const layerNeedTags = {
+      [PuzzleLayer.ATTACHMENT]: ["anxious","avoidant","secure","needs-reassurance","needs-space","needs-consistency"],
+      [PuzzleLayer.PROCESSING_STYLE]: ["direct","avoid-conflict","shutdown","solo-processor","collaborative-fixer"],
+      [PuzzleLayer.PLAYFULNESS]: ["novelty","cozy","social","adventure","homebody"],
+      [PuzzleLayer.BOUNDARIES]: ["trust-boundary","respect-boundary","dignity","autonomy"],
+    };
+    lowestLayers.forEach(layer => (layerNeedTags[layer] || []).forEach(t => signals.add(t)));
+
+    const allChars = this.getAllCharacters();
+    const scored = allChars.map(ch => {
+      const tags = ch.tags || [];
+      let score = 0;
+      tags.forEach(t => { if (signals.has(t)) score += 2; });
+      lowestLayers.forEach(layer => {
+        const lt = layerNeedTags[layer] || [];
+        if (lt.some(x => tags.includes(x))) score += 1;
+      });
+      return { ch, score };
+    }).sort((a,b)=>b.score-a.score);
+
+    const usedShows = new Set();
+    const picked = [];
+    for (const item of scored) {
+      if (picked.length >= limit) break;
+      if (usedShows.size < 6 && usedShows.has(item.ch.showId)) continue;
+      picked.push(item.ch);
+      usedShows.add(item.ch.showId);
+    }
+    return picked;
+  }
+
+  resolveCharacterImage(ch) {
+    if (ch.imageUrl) return ch.imageUrl;
+    const q = encodeURIComponent(ch.imageQuery || `${ch.displayName} ${ch.showName} scene`);
+    return `https://loremflickr.com/400/300/${q}?lock=${encodeURIComponent(ch.id + "_" + ch.showId)}`;
+  }
+
+  submitForm(formAnswers) {
+    this.formAnswers = formAnswers;
+
+    if (formAnswers.conflict === 'fix-now') this.layerConfidence[PuzzleLayer.PROCESSING_STYLE] += 0.12;
+    if (formAnswers.conflict === 'spiral') this.layerConfidence[PuzzleLayer.ATTACHMENT] += 0.05;
+    if (formAnswers.intimacy === 'fun-outings') this.layerConfidence[PuzzleLayer.PLAYFULNESS] += 0.12;
+    if (formAnswers.intimacy === 'cozy-home') this.layerConfidence[PuzzleLayer.PLAYFULNESS] += 0.06;
+    if (formAnswers.ick === 'ghosting-dry') this.layerConfidence[PuzzleLayer.BOUNDARIES] += 0.06;
+
+    this.screen = 'game1';
+    this.notify();
+  }
+
+  toggleGame1Cuisine(cuisineId) {
+    const idx = this.game1.cuisines.indexOf(cuisineId);
+    if (idx >= 0) {
+      this.game1.cuisines.splice(idx, 1);
+    } else {
+      this.game1.cuisines.push(cuisineId);
+    }
+    this.notify();
+  }
+
+  toggleGame1Activity(activityId) {
+    const idx = this.game1.activities.indexOf(activityId);
+    if (idx >= 0) {
+      this.game1.activities.splice(idx, 1);
+    } else {
+      this.game1.activities.push(activityId);
+    }
+    this.notify();
+  }
+
+  setGame1Combo(cuisineId, activityId) {
+    this.game1.idealCombo.cuisine = cuisineId || '';
+    this.game1.idealCombo.activity = activityId || '';
+    this.notify();
+  }
+
+  canProceedGame1() {
+    if (this.game1.step === 'cuisines') {
+      return true; // Allow proceeding even with 0 selections
+    } else if (this.game1.step === 'activities') {
+      return true; // Allow proceeding even with 0 selections
+    } else if (this.game1.step === 'combo') {
+      return this.game1.idealCombo.cuisine && this.game1.idealCombo.activity;
+    }
+    return false;
+  }
+
+  continueFromGame1(skip=false) {
+    if (!skip && this.game1.step === 'combo' && this.canProceedGame1()) {
+      // Game 1 complete, proceed to Game 2
+      this.screen = 'game2';
+      // Reset Game 2 state
+      this.game2.selectedShows = [];
+      this.game2.showQueue = [];
+      this.game2.currentShowIndex = 0;
+      this.game2.currentShowId = null;
+      this.game2.activeShowIndex = 0;
+      this.game2.activeCharacterId = null;
+      this.game2.step = 'pickShows';
+      this.game2.answers = [];
+    }
+    this.notify();
+  }
+
+
+  continueFromGame2(skip=false) {
+    if (skip) {
+      this.screen = 'summary';
+    this.notify();
+      return;
+    }
+    // Game 2 completion is now handled in renderGame2() scenario step
+    // This method is only used for skip
+  }
+
+  advanceChat(userText, isChip=false) {
+    if (!userText) return;
+
+    const wc = userText.trim().split(/\s+/).filter(Boolean).length;
+    if (!isChip && wc <= 2) this.integrityScore = Math.max(0, this.integrityScore - 1);
+    if (wc >= 8) this.integrityScore = Math.min(10, this.integrityScore + 1);
+
+    this._pushUser(userText, isChip);
+
+    // 1. Name Input
+    if (this.currentStep === ChatStep.NAME_INPUT) {
+      this.userName = userText.trim().split(/\s+/)[0].slice(0,20);
+      this.currentStep = ChatStep.VIBE_CONFIRMATION;
+      this._pushBot(`Nice to meet you, **${escapeHtml(this.userName)}**. Quick vibe check: does your dating-self match your day-to-day self? Tell me your relationship vibe in **at least 5 words**.`);
+      this.notify(); return;
+    }
+
+    // 2. Vibe Confirmation
+    if (this.currentStep === ChatStep.VIBE_CONFIRMATION || this.currentStep === ChatStep.VIBE_CONFIRMATION_RETRY) {
+      const words = userText.trim().split(/\s+/).filter(Boolean).length;
+      if (words < 5) {
+        this.currentStep = ChatStep.VIBE_CONFIRMATION_RETRY;
+        this._pushBot("That was a little too short 😅 Give me at least **five words** so I don’t accidentally match you with a robot. What’s your real relationship vibe?");
+        this.notify(); return;
+      }
+
+      // Check for Scenarios
+      if (this.scenarioQueue.length > 0) {
+        this.currentStep = ChatStep.SCENARIO_MODE;
+        this._askNextScenario();
+      } else {
+        this.currentStep = ChatStep.ADAPTIVE_PROBING;
+        this.probeIndex = 0;
+        this._askNextProbe();
+      }
+      this.notify(); return;
+    }
+
+    // 3. Scenario Mode
+    if (this.currentStep === ChatStep.SCENARIO_MODE) {
+      const currentScenario = this.scenarioQueue[0];
+      
+      // Attempt to find picked option to grab tags
+      const pickedOption = currentScenario.data.options.find(o => o.text === userText);
+      if (pickedOption) {
+        const tags = pickedOption.tags;
+        
+        // Confidence boosting
+        if (tags.some(t => ["anxious","secure","avoidant"].includes(t))) this.layerConfidence[PuzzleLayer.ATTACHMENT] += 0.15;
+        if (tags.some(t => ["solo-processor","collaborative","fixer"].includes(t))) this.layerConfidence[PuzzleLayer.PROCESSING_STYLE] += 0.15;
+        if (tags.some(t => ["director","planner","structured"].includes(t))) this.layerConfidence[PuzzleLayer.BOUNDARIES] += 0.15;
+
+        this.probeResults[`scenario_${currentScenario.id}`] = { choice: userText, tags: tags };
+      }
+
+      this.scenarioQueue.shift();
+
+      if (this.scenarioQueue.length > 0) {
+        this._askNextScenario();
+      } else {
+        this.currentStep = ChatStep.ADAPTIVE_PROBING;
+        this.probeIndex = 0;
+        this._pushBot("Okay, shifting gears to the real you. Let's dig a little deeper.");
+        setTimeout(() => this._askNextProbe(), 600);
+      }
+      this.notify(); return;
+    }
+
+    // 4. Adaptive Probing
+    if (this.currentStep === ChatStep.ADAPTIVE_PROBING) {
+      const module = PROBE_MODULES[this._probeOrder()[this.probeIndex]];
+      if (module) {
+        if (module.replies.includes(userText)) {
+          const tags = module.tags[userText] || [];
+          this.probeResults[module.layer] = { choice: userText, tags };
+          this.layerConfidence[module.layer] = Math.min(1, this.layerConfidence[module.layer] + 0.18);
+        } else {
+          this.layerConfidence[module.layer] = Math.min(1, this.layerConfidence[module.layer] + 0.08);
+        }
+      }
+      this.probeIndex += 1;
+      this._askNextProbe();
+      this.notify(); return;
+    }
+
+    if (this.currentStep === ChatStep.THIS_OR_THAT) {
+      this.thisOrThatAnswers.push({ qIndex: this.thisOrThatIndex, a: userText });
+      this.thisOrThatIndex += 1;
+      this._askThisOrThat();
+      this.notify(); return;
+    }
+
+    if (this.currentStep === ChatStep.SUMMARY_NUDGE) {
+      this.currentStep = ChatStep.COMPLETE;
+      this.go('summary');
+      return;
+    }
+  }
+
+  _askNextScenario() {
+    const nextItem = this.scenarioQueue[0];
+    const scenarioData = nextItem.data;
+    const replies = scenarioData.options.map(o => o.text);
+    
+    const charName = nextItem.id.split(':')[1];
+    const capitalized = charName.charAt(0).toUpperCase() + charName.slice(1);
+    
+    this._pushBot(`**Level 2: ${capitalized} Mode** 🎬\n\n${scenarioData.text}`, replies);
+  }
+
+  _probeOrder() {
+    const sortedLayers = Object.entries(this.layerConfidence).sort((a,b)=>a[1]-b[1]).map(([k])=>k);
+    const ordered = [];
+    sortedLayers.forEach(layer => {
+      const idx = PROBE_MODULES.findIndex(m => m.layer === layer);
+      if (idx >= 0) ordered.push(idx);
+    });
+    return ordered.slice(0, 3);
+  }
+
+  _askNextProbe() {
+    const order = this._probeOrder();
+    if (this.probeIndex >= order.length) {
+      this.currentStep = ChatStep.THIS_OR_THAT;
+      this.thisOrThatIndex = 0;
+      this._pushBot("That’s enough for now. Want a quick 30-second **This or That** to sharpen your vibe? (You can skip.)", ["Let’s do it", "Skip to summary"]);
+      return;
+    }
+    const mod = PROBE_MODULES[order[this.probeIndex]];
+    // Removed "Got it. That helps." to reduce spamminess
+    this._pushBot(mod.text, mod.replies, mod.layer);
+  }
+
+  skipThisOrThatToSummary() {
+    this.currentStep = ChatStep.SUMMARY_NUDGE;
+    this._pushBot("Cool. I’ve got enough to show you something meaningful. Tap below when you’re ready.", ["Show my summary"]);
+    this.notify();
+  }
+
+  startThisOrThat() {
+    this.currentStep = ChatStep.THIS_OR_THAT;
+    this.thisOrThatIndex = 0;
+    this.thisOrThatAnswers = [];
+    this._askThisOrThat();
+    this.notify();
+  }
+
+  _askThisOrThat() {
+    const QUESTIONS = [
+      { q:"Your ideal check-in style?", replies:["Random memes all day", "One good call", "Texts + voice notes", "Only when needed"] },
+      { q:"When you’re stressed, you want your person to…", replies:["Give me space","Be near me","Make me laugh","Help me plan"] },
+      { q:"Biggest green flag energy:", replies:["Consistency","Kindness","Directness","Playfulness"] },
+    ];
+
+    if (this.thisOrThatIndex >= QUESTIONS.length) {
+      this.currentStep = ChatStep.SUMMARY_NUDGE;
+      this._pushBot("Done ✅ That’s enough to build your summary. Want to see it now?", ["Show my summary"]);
+      return;
+    }
+
+    const item = QUESTIONS[this.thisOrThatIndex];
+    this._pushBot(`This or That: **${item.q}**`, item.replies);
+  }
+
+  handleChatChip(chipText) {
+    if (!chipText) return;
+
+    if (chipText === "Let’s do it") return this.startThisOrThat();
+    if (chipText === "Skip to summary") return this.skipThisOrThatToSummary();
+    if (chipText === "Show my summary") {
+      this.currentStep = ChatStep.COMPLETE;
+      this.go('summary');
+      return;
+    }
+
+    return this.advanceChat(chipText, true);
+  }
+
+  getSummary() {
+    const name = this.userName || "You";
+    const tags = [];
+
+    if (this.formAnswers) {
+      const fa = this.formAnswers;
+      if (fa.datingPhase === 'main-story') tags.push("showing-up");
+      if (fa.datingPhase === 'sidequest') tags.push("casual-energy");
+      if (fa.capacity === 'make-time') tags.push("capacity-high");
+      if (fa.capacity === 'soft-launch') tags.push("capacity-low");
+      if (fa.intimacy === 'deep-talks') tags.push("depth-seeker");
+      if (fa.intimacy === 'fun-outings') tags.push("novelty-seeker");
+      if (fa.intimacy === 'cozy-home') tags.push("comfort-seeker");
+      if (fa.intimacy === 'independent-memes') tags.push("independent-fun");
+      if (fa.conflict === 'fix-now') tags.push("direct-repair");
+      if (fa.conflict === 'space-then-talk') tags.push("space-then-repair");
+      if (fa.conflict === 'spiral') tags.push("internal-processor");
+      if (fa.conflict === 'distract-friends') tags.push("distract-cope");
+      if (fa.ick === 'ghosting-dry') tags.push("needs-consistency");
+      if (fa.ick === 'jealous-controlling') tags.push("needs-autonomy");
+      if (fa.ick === 'rude-small') tags.push("needs-respect");
+      if (fa.ick === 'disrespect-time') tags.push("needs-time-respect");
+    }
+
+    // Game 1: Use cuisines and activities (no longer using selected/vibe cards)
+    if (this.game1.cuisines && this.game1.cuisines.length > 0) {
+      // Add tags based on cuisine preferences if needed
+    }
+    if (this.game1.activities && this.game1.activities.length > 0) {
+      // Add tags based on activity preferences if needed
+    }
+
+    // Game 2: Use answers to get character info
+    const allChars = this.getAllCharacters();
+    const chosenChars = [];
+    if (this.game2.answers && this.game2.answers.length > 0) {
+      this.game2.answers.forEach(answer => {
+        const charKey = answer.key || `${answer.showId}:${answer.characterId}`;
+        const char = allChars.find(c => (c.showId + ":" + c.id) === charKey);
+        if (char) chosenChars.push(char);
+      });
+    }
+    chosenChars.forEach(c => tags.push(...(c.tags || [])));
+
+    Object.values(this.probeResults).forEach(r => tags.push(...(r.tags || [])));
+
+    const has = (t) => tags.includes(t);
+
+    let archetype = "Self-Explorer";
+    if (has("novelty") || has("adventure") || has("novelty-seeker") || has("explorer")) archetype = "Explorer";
+    if (has("cozy") || has("comfort-seeker") || has("homebody")) archetype = "Soother";
+    if (has("direct-repair") || has("direct") || has("collaborative-fixer") || has("fixer")) archetype = "Fixer";
+    if ((has("capacity-high") && (has("planner") || has("structured"))) || has("director")) archetype = "Director";
+
+    const needs = [];
+    if (has("needs-consistency")) needs.push("Consistency (texts, plans, energy)");
+    if (has("needs-autonomy") || has("autonomy")) needs.push("Respect for independence");
+    if (has("needs-respect") || has("dignity")) needs.push("Respect (no humiliation energy)");
+    if (has("needs-time-respect") || has("respect-boundary")) needs.push("Time respect (no flakes)");
+    if (has("depth-seeker")) needs.push("Depth + honesty");
+    if (has("comfort-seeker") || has("cozy")) needs.push("Comfort + calm");
+    while (needs.length < 3) needs.push(["Emotional safety", "Mutual effort", "Good communication"][needs.length]);
+
+    const greens = [];
+    if (has("direct-repair") || has("direct")) greens.push("Direct, clean communication");
+    if (has("loyal") || has("commitment")) greens.push("Reliability / follow-through");
+    if (has("steady")) greens.push("Calm nervous system energy");
+    if (has("novelty-seeker") || has("adventure")) greens.push("Playful curiosity");
+    while (greens.length < 3) greens.push(["Kindness", "Consistency", "Emotional maturity"][greens.length]);
+
+    const descBits = [];
+    if (has("depth-seeker")) descBits.push("you like real conversations when it matters");
+    if (has("novelty-seeker")) descBits.push("you stay excited with fun plans + new experiences");
+    if (has("comfort-seeker")) descBits.push("you love cozy rituals and low-pressure closeness");
+    if (has("space-then-repair") || has("needs-space")) descBits.push("you do best with a little space before talking");
+    if (has("direct-repair")) descBits.push("you prefer clearing things up instead of letting it sit");
+
+    const summaryText = descBits.length
+      ? `${name}, based on what you shared so far, ${descBits.slice(0,2).join(" and ")}.`
+      : `${name}, based on what you shared so far, your vibe looks thoughtful and intentional — even if you’re keeping it low-pressure.`;
+
+    return {
+      archetype,
+      needs: needs.slice(0,3),
+      greenFlags: greens.slice(0,3),
+      summaryText,
+      chosenChars,
+      confidence: Math.round((Object.values(this.layerConfidence).reduce((a,b)=>a+b,0)/4)*100),
+    };
+  }
+}
+
+/* =========================================================
+   6) Rendering
+========================================================= */
+const vm = new AppViewModel();
+const appDiv = document.getElementById('puzzles-app');
+
+function render() {
+  appDiv.innerHTML = '';
+
+  const needsDevPadding = ['logo', 'form', 'game1', 'game2', 'chat', 'summary', 'map'];
+  if (needsDevPadding.includes(vm.screen)) {
+     appDiv.classList.add('app-screen-padded');
+  } else {
+     appDiv.classList.remove('app-screen-padded');
+  }
+
+  // Fallback guard: ensure screen is always valid
+  const validScreens = ['logo', 'form', 'game1', 'game2', 'chat', 'summary', 'map'];
+  if (!validScreens.includes(vm.screen)) {
+    vm.screen = 'game2'; // Default fallback
+  }
+
+  switch(vm.screen) {
+    case 'logo': appDiv.appendChild(renderLogo()); break;
+    case 'form': appDiv.appendChild(renderForm()); break;
+    case 'game1': appDiv.appendChild(renderGame1()); break;
+    case 'game2': appDiv.appendChild(renderGame2()); break;
+    case 'chat': appDiv.appendChild(renderChat()); setTimeout(scrollToBottom, 60); break;
+    case 'summary': appDiv.appendChild(renderSummary()); break;
+    case 'map': appDiv.appendChild(renderMap()); break;
+    default: appDiv.appendChild(renderGame2()); break; // Final fallback
+  }
+
+  // Render Profile overlay if open
+  if (vm.ui.profileOpen) {
+    const profileOverlay = renderProfileOverlay();
+    appDiv.appendChild(profileOverlay);
+  }
+
+  if (vm.screen !== 'logo') {
+    appDiv.appendChild(renderBottomNav());
+  }
+  lucide.createIcons();
+}
+
+function renderBottomNav() {
+  const nav = document.createElement('div');
+  nav.className = 'bottom-nav';
+
+  const itemsContainer = document.createElement('div');
+  itemsContainer.className = 'bottom-nav-items';
+
+  const tabs = [
+    { id: 'form', label: 'Form', icon: 'file-text' },
+    { id: 'game1', label: 'Game 1', icon: 'zap' },
+    { id: 'game2', label: 'Game 2', icon: 'tv' },
+    { id: 'chat', label: 'Chat', icon: 'message-circle' },
+    { id: 'summary', label: 'Summary', icon: 'file-check' },
+    { id: 'map', label: 'Map', icon: 'map-pin' }
+  ];
+
+  tabs.forEach(tab => {
+    const isActive = vm.screen === tab.id;
+    const btn = document.createElement('button');
+    btn.className = 'nav-button-container hover:bg-gray-100';
+    btn.innerHTML = `
+      <div class="flex items-center space-x-1 ${isActive ? 'nav-item-active' : 'text-gray-400'}">
+        <i data-lucide="${tab.icon}" class="w-5 h-5"></i>
+        <span class="text-xs font-extrabold">${isActive ? tab.label : ''}</span>
+      </div>
+      <span class="text-xs font-semibold ${isActive ? 'hidden' : 'text-gray-500 mt-1'}">${tab.label}</span>
+    `;
+    btn.addEventListener('click', () => {
+      const target = tab.id;
+
+      if (!vm.formAnswers) {
+        vm.formAnswers = {
+          datingPhase: "vibes",
+          capacity: "laidback-consistent",
+          intimacy: "cozy-home",
+          conflict: "space-then-talk",
+          ick: "ghosting-dry"
+        };
+      }
+
+      if (target === 'chat' && vm.messages.length === 0) {
+        vm.screen = 'chat';
+        vm.messages = [];
+        vm._pushBot("Hey — I'm Vibe. 💜 What should I call you? (First name is perfect.)");
+      } else {
+        vm.screen = target;
+      }
+
+      vm.notify();
+    });
+    itemsContainer.appendChild(btn);
+  });
+
+  nav.appendChild(itemsContainer);
+  return nav;
+}
+
+function renderLogo() {
+  const c = document.createElement('div');
+  c.className = 'flex flex-col h-full items-center justify-center bg-white p-10';
+  c.innerHTML = `
+    <div class="text-6xl font-extrabold text-indigo-600 tracking-tighter" style="font-weight:900;">PUZZLES</div>
+    <div class="text-base text-gray-500 mt-3 text-center">Unlock your relationship archetype.</div>
+    <button id="start" class="mt-14 px-6 py-3 bg-teal-500 text-white font-extrabold rounded-xl shadow-lg hover:bg-teal-600 active:scale-95 transition">
+      Start Vibe Journey
+    </button>
+  `;
+  c.querySelector('#start').addEventListener('click', () => {
+    // Reset Game 1 state for fresh start
+    vm.game1 = {
+      cuisines: [],
+      activities: [],
+      idealCombo: { cuisine: '', activity: '' },
+      step: 'cuisines'
+    };
+    vm.go('game1');
+  });
+  return c;
+}
+
+function renderForm() {
+  const c = document.createElement('div');
+  c.className = 'flex flex-col h-full bg-white';
+
+  c.innerHTML = `
+    <div class="p-6 pt-10 border-b border-gray-100 bg-white">
+      <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <button id="back" class="p-2 rounded-full hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-500"></i></button>
+        <div>
+          <div class="text-xl font-extrabold text-gray-900">Level 1: Start With Your Vibes</div>
+          <div class="text-sm text-gray-500">Playful, not deep. Just your current energy.</div>
+        </div>
+        </div>
+        <button id="profileBtn" class="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1 text-sm font-extrabold text-gray-700">
+          <i data-lucide="user" class="w-4 h-4"></i>
+          <span>Profile</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-6">
+      <div class="space-y-2">
+        <label class="font-semibold text-gray-800">1. Right now, dating for me is…</label>
+        <select id="q1" class="w-full p-3 border rounded-xl bg-gray-50 focus:border-indigo-500">
+          <option value="sidequest">Side quest energy</option>
+          <option value="vibes">“If it vibes, it vibes”</option>
+          <option value="main-story">Main storyline, I’m showing up</option>
+          <option value="open-curious">Open, but not really pressing play</option>
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="font-semibold text-gray-800">2. If someone great popped up tomorrow, I’ve got room for…</label>
+        <select id="q2" class="w-full p-3 border rounded-xl bg-gray-50 focus:border-indigo-500">
+          <option value="low-effort">Chill, low-effort, we talk when we can</option>
+          <option value="laidback-consistent">Consistent but laid-back, we’re both busy</option>
+          <option value="make-time">My person, I actually make time</option>
+          <option value="soft-launch">Soft-launch energy — I’m not diving deep yet</option>
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="font-semibold text-gray-800">3. When I like someone, I’m most into…</label>
+        <select id="q3" class="w-full p-3 border rounded-xl bg-gray-50 focus:border-indigo-500">
+          <option value="deep-talks">2 a.m. deep talks and oversharing</option>
+          <option value="fun-outings">Going out, trying fun stuff together</option>
+          <option value="cozy-home">Couch, snacks, calls / movies / gaming</option>
+          <option value="independent-memes">Doing our own thing, sending random memes</option>
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="font-semibold text-gray-800">4. When the vibe feels weird, I usually…</label>
+        <select id="q4" class="w-full p-3 border rounded-xl bg-gray-50 focus:border-indigo-500">
+          <option value="space-then-talk">Go quiet for a bit, then talk</option>
+          <option value="fix-now">Ask what’s up and try to fix it</option>
+          <option value="distract-friends">Dive into friends, music, memes</option>
+          <option value="spiral">Spiral in my head and say nothing</option>
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <label class="font-semibold text-gray-800">5. Instant ick for me is…</label>
+        <select id="q5" class="w-full p-3 border rounded-xl bg-gray-50 focus:border-indigo-500">
+          <option value="ghosting-dry">Ghosting or dry-as-dust replies</option>
+          <option value="jealous-controlling">Jealous / controlling behaviour</option>
+          <option value="rude-small">Being rude or making me feel small</option>
+          <option value="disrespect-time">Treating my time like it doesn’t matter</option>
+        </select>
+      </div>
+
+      <button id="continue" class="mt-4 w-full px-6 py-3 bg-indigo-600 text-white font-extrabold rounded-xl shadow-lg hover:bg-indigo-700 active:scale-95 transition">
+        Continue → Vibe Deck
+      </button>
+    </div>
+  `;
+
+  c.querySelector('#back').addEventListener('click', () => vm.go('logo'));
+  const profileBtn = c.querySelector('#profileBtn');
+  if (profileBtn) {
+    profileBtn.addEventListener('click', () => {
+      vm.ui.profileOpen = true;
+      vm.notify();
+    });
+  }
+  c.querySelector('#continue').addEventListener('click', () => {
+    const formAnswers = {
+      datingPhase: c.querySelector('#q1').value,
+      capacity: c.querySelector('#q2').value,
+      intimacy: c.querySelector('#q3').value,
+      conflict: c.querySelector('#q4').value,
+      ick: c.querySelector('#q5').value,
+    };
+    vm.submitForm(formAnswers);
+  });
+
+  return c;
+}
+
+function renderGame1() {
+  const c = document.createElement('div');
+  c.className = 'flex flex-col h-full bg-gray-50';
+
+  // Defensive fallback: ensure step is always valid
+  const validSteps = ['cuisines', 'activities', 'combo'];
+  if (!vm.game1.step || !validSteps.includes(vm.game1.step)) {
+    vm.game1.step = 'cuisines';
+  }
+  const step = vm.game1.step;
+
+  // STEP 1: Cuisines (Multi-select pills)
+  if (step === 'cuisines') {
+  c.innerHTML = `
+    <div class="p-6 pt-10 bg-white border-b border-gray-100">
+      <div class="flex items-center justify-between">
+        <button id="back" class="p-2 rounded-full hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-500"></i></button>
+          <div class="text-base font-extrabold text-gray-900">Game 1</div>
+        <div class="flex items-center gap-2">
+        <button id="skip" class="text-xs font-bold text-indigo-600 hover:underline">Skip</button>
+          <button id="profileBtn" class="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1 text-xs font-extrabold text-gray-700">
+            <i data-lucide="user" class="w-3 h-3"></i>
+            <span>Profile</span>
+          </button>
+        </div>
+      </div>
+      <div class="mt-4">
+          <div class="text-2xl font-extrabold text-gray-900">Pick your cuisines</div>
+          <div class="text-sm text-gray-500 mt-1">Pick 3 or more cuisines to continue</div>
+      </div>
+    </div>
+
+      <div class="flex-1 overflow-y-auto p-6 pb-44">
+        <div class="flex flex-wrap gap-3" id="cuisines-list"></div>
+      </div>
+
+      <div class="sticky bg-white border-t border-gray-100 p-4" style="bottom: 84px;">
+        <div class="text-xs text-gray-500 mb-2 text-center">Selected: ${vm.game1.cuisines.length}</div>
+        ${vm.game1.cuisines.length < 3 ? `
+          <div class="text-xs text-gray-400 mb-2 text-center" id="helper-msg"></div>
+          <button id="continue" class="w-full px-6 py-3 rounded-xl font-extrabold shadow-lg bg-gray-200 text-gray-500 cursor-not-allowed" disabled>Continue</button>
+        ` : `
+          <button id="continue" class="w-full px-6 py-3 rounded-xl font-extrabold shadow-lg bg-indigo-600 text-white hover:bg-indigo-700 transition active:scale-95">Continue</button>
+        `}
+    </div>
+  `;
+
+    c.querySelector('#back').addEventListener('click', () => {
+      // If at first step, go to Form, otherwise go to previous step
+      if (vm.game1.step === 'cuisines') {
+        vm.go('form');
+      } else {
+        vm.game1.step = 'cuisines';
+        vm.notify();
+      }
+    });
+    const profileBtn = c.querySelector('#profileBtn');
+    if (profileBtn) {
+      profileBtn.addEventListener('click', () => {
+        vm.ui.profileOpen = true;
+        vm.notify();
+      });
+    }
+    c.querySelector('#skip').addEventListener('click', () => {
+      vm.game1.step = 'activities';
+      vm.notify();
+    });
+
+    const cuisinesList = c.querySelector('#cuisines-list');
+    GAME1_CUISINES.forEach(cuisine => {
+      const isSelected = vm.game1.cuisines.includes(cuisine.id);
+    const btn = document.createElement('button');
+      btn.className = `px-4 py-2.5 rounded-full font-extrabold text-sm transition ${
+        isSelected 
+          ? 'bg-indigo-600 text-white' 
+          : 'bg-white text-gray-900 border-2 border-gray-200 hover:border-indigo-300'
+      }`;
+      btn.textContent = cuisine.label;
+      btn.addEventListener('click', () => vm.toggleGame1Cuisine(cuisine.id));
+      cuisinesList.appendChild(btn);
+    });
+
+    const continueBtn = c.querySelector('#continue');
+    if (continueBtn && !continueBtn.disabled) {
+      continueBtn.addEventListener('click', () => {
+        if (vm.game1.cuisines.length >= 3) {
+          vm.game1.step = 'activities';
+          vm.notify();
+        }
+      });
+    } else if (continueBtn && continueBtn.disabled) {
+      continueBtn.addEventListener('click', () => {
+        const helperMsg = c.querySelector('#helper-msg');
+        if (helperMsg) {
+          helperMsg.textContent = 'Pick 3+ to continue';
+          helperMsg.className = 'text-xs text-indigo-600 mb-2 text-center font-bold';
+          setTimeout(() => {
+            helperMsg.textContent = '';
+            helperMsg.className = 'text-xs text-gray-400 mb-2 text-center';
+          }, 2000);
+        }
+        continueBtn.style.animation = 'shake 0.3s ease-in-out';
+        setTimeout(() => {
+          continueBtn.style.animation = '';
+        }, 300);
+      });
+    }
+
+    return c;
+  }
+
+  // STEP 2: Activities (Multi-select pills)
+  if (step === 'activities') {
+    c.innerHTML = `
+      <div class="p-6 pt-10 bg-white border-b border-gray-100">
+        <div class="flex items-center justify-between">
+          <button id="back" class="p-2 rounded-full hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-500"></i></button>
+          <div class="text-base font-extrabold text-gray-900">Game 1</div>
+          <div class="flex items-center gap-2">
+            <button id="skip" class="text-xs font-bold text-indigo-600 hover:underline">Skip</button>
+            <button id="profileBtn" class="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1 text-xs font-extrabold text-gray-700">
+              <i data-lucide="user" class="w-3 h-3"></i>
+              <span>Profile</span>
+        </button>
+      </div>
+        </div>
+        <div class="mt-4">
+          <div class="text-2xl font-extrabold text-gray-900">Pick all the things you'd genuinely enjoy doing with someone new</div>
+          <div class="text-sm text-gray-500 mt-1">Pick 3 or more activities to continue</div>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6 pb-44">
+        <div class="flex flex-wrap gap-3" id="activities-list"></div>
+      </div>
+
+      <div class="sticky bg-white border-t border-gray-100 p-4" style="bottom: 84px;">
+        <div class="text-xs text-gray-500 mb-2 text-center">Selected: ${vm.game1.activities.length}</div>
+        ${vm.game1.activities.length < 3 ? `
+          <div class="text-xs text-gray-400 mb-2 text-center" id="helper-msg"></div>
+          <button id="continue" class="w-full px-6 py-3 rounded-xl font-extrabold shadow-lg bg-gray-200 text-gray-500 cursor-not-allowed" disabled>Continue</button>
+        ` : `
+          <button id="continue" class="w-full px-6 py-3 rounded-xl font-extrabold shadow-lg bg-indigo-600 text-white hover:bg-indigo-700 transition active:scale-95">Continue</button>
+        `}
+    </div>
+  `;
+
+    c.querySelector('#back').addEventListener('click', () => {
+      // Go back to cuisines step
+      vm.game1.step = 'cuisines';
+      vm.notify();
+    });
+    c.querySelector('#skip').addEventListener('click', () => {
+      vm.game1.step = 'combo';
+      vm.notify();
+    });
+
+    const activitiesList = c.querySelector('#activities-list');
+    GAME1_ACTIVITIES.forEach(activity => {
+      const isSelected = vm.game1.activities.includes(activity.id);
+    const btn = document.createElement('button');
+      btn.className = `px-4 py-2.5 rounded-full font-extrabold text-sm transition ${
+        isSelected 
+          ? 'bg-indigo-600 text-white' 
+          : 'bg-white text-gray-900 border-2 border-gray-200 hover:border-indigo-300'
+      }`;
+      btn.innerHTML = `${activity.emoji} ${escapeHtml(activity.label)}`;
+      btn.addEventListener('click', () => vm.toggleGame1Activity(activity.id));
+      activitiesList.appendChild(btn);
+    });
+
+    const continueBtn = c.querySelector('#continue');
+    if (continueBtn && !continueBtn.disabled) {
+      continueBtn.addEventListener('click', () => {
+        if (vm.game1.activities.length >= 3) {
+          vm.game1.step = 'combo';
+          vm.notify();
+        }
+      });
+    } else if (continueBtn && continueBtn.disabled) {
+      continueBtn.addEventListener('click', () => {
+        const helperMsg = c.querySelector('#helper-msg');
+        if (helperMsg) {
+          helperMsg.textContent = 'Pick 3+ to continue';
+          helperMsg.className = 'text-xs text-indigo-600 mb-2 text-center font-bold';
+          setTimeout(() => {
+            helperMsg.textContent = '';
+            helperMsg.className = 'text-xs text-gray-400 mb-2 text-center';
+          }, 2000);
+        }
+        continueBtn.style.animation = 'shake 0.3s ease-in-out';
+        setTimeout(() => {
+          continueBtn.style.animation = '';
+        }, 300);
+      });
+    }
+
+    return c;
+  }
+
+  // STEP 3: Ideal Combo
+  if (step === 'combo') {
+    c.innerHTML = `
+      <div class="p-6 pt-10 bg-white border-b border-gray-100">
+        <div class="flex items-center justify-between">
+          <button id="back" class="p-2 rounded-full hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-500"></i></button>
+          <div class="text-base font-extrabold text-gray-900">Game 1</div>
+          <button id="profileBtn" class="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1 text-xs font-extrabold text-gray-700">
+            <i data-lucide="user" class="w-3 h-3"></i>
+            <span>Profile</span>
+          </button>
+        </div>
+        <div class="mt-4">
+          <div class="text-2xl font-extrabold text-gray-900">Your ideal combo?</div>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6 pb-44">
+        <div class="space-y-4">
+          ${vm.game1.cuisines.length === 0 || vm.game1.activities.length === 0 ? `
+            <div class="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mb-4">
+              <div class="text-sm font-extrabold text-yellow-800">
+                ${vm.game1.cuisines.length === 0 && vm.game1.activities.length === 0 
+                  ? 'Pick at least 1 cuisine and 1 activity to make a combo'
+                  : vm.game1.cuisines.length === 0 
+                    ? 'Pick at least 1 cuisine to make a combo'
+                    : 'Pick at least 1 activity to make a combo'}
+              </div>
+            </div>
+          ` : ''}
+          <div>
+            <label class="text-sm font-extrabold text-gray-900 block mb-2">Cuisine</label>
+            <select id="combo-cuisine" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 font-extrabold">
+              <option value="">Select...</option>
+              ${vm.game1.cuisines.length > 0 ? vm.game1.cuisines.map(cid => {
+                const cuisine = GAME1_CUISINES.find(c => c.id === cid);
+                return cuisine ? `<option value="${cuisine.id}" ${vm.game1.idealCombo.cuisine === cuisine.id ? 'selected' : ''}>${escapeHtml(cuisine.label)}</option>` : '';
+              }).join('') : GAME1_CUISINES.map(c => `<option value="${c.id}" ${vm.game1.idealCombo.cuisine === c.id ? 'selected' : ''}>${escapeHtml(c.label)}</option>`).join('')}
+            </select>
+          </div>
+
+          <div>
+            <label class="text-sm font-extrabold text-gray-900 block mb-2">Activity</label>
+            <select id="combo-activity" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 font-extrabold">
+              <option value="">Select...</option>
+              ${vm.game1.activities.length > 0 ? vm.game1.activities.map(aid => {
+                const activity = GAME1_ACTIVITIES.find(a => a.id === aid);
+                return activity ? `<option value="${activity.id}" ${vm.game1.idealCombo.activity === activity.id ? 'selected' : ''}>${escapeHtml(activity.emoji)} ${escapeHtml(activity.label)}</option>` : '';
+              }).join('') : GAME1_ACTIVITIES.map(a => `<option value="${a.id}" ${vm.game1.idealCombo.activity === a.id ? 'selected' : ''}>${escapeHtml(a.emoji)} ${escapeHtml(a.label)}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="sticky bg-white border-t border-gray-100 p-4" style="bottom: 84px;">
+        <button id="lock-in" class="w-full px-6 py-3 rounded-xl font-extrabold shadow-lg bg-indigo-600 text-white hover:bg-indigo-700 transition active:scale-95 ${!vm.game1.idealCombo.cuisine || !vm.game1.idealCombo.activity ? 'opacity-50 cursor-not-allowed' : ''}" ${!vm.game1.idealCombo.cuisine || !vm.game1.idealCombo.activity ? 'disabled' : ''}>
+          Lock it in
+        </button>
+      </div>
+    `;
+
+    c.querySelector('#back').addEventListener('click', () => {
+      // Go back to activities step
+      vm.game1.step = 'activities';
+      vm.notify();
+    });
+    c.querySelector('#skip').addEventListener('click', () => vm.continueFromGame1(true));
+
+    const cuisineSelect = c.querySelector('#combo-cuisine');
+    const activitySelect = c.querySelector('#combo-activity');
+    
+    cuisineSelect.addEventListener('change', () => {
+      vm.setGame1Combo(cuisineSelect.value, vm.game1.idealCombo.activity);
+    });
+    
+    activitySelect.addEventListener('change', () => {
+      vm.setGame1Combo(vm.game1.idealCombo.cuisine, activitySelect.value);
+    });
+
+    const lockInBtn = c.querySelector('#lock-in');
+    lockInBtn.addEventListener('click', () => {
+      if (vm.game1.idealCombo.cuisine && vm.game1.idealCombo.activity) {
+        vm.continueFromGame1(false);
+  } else {
+        // Show shake animation if disabled
+        lockInBtn.style.animation = 'shake 0.3s ease-in-out';
+        setTimeout(() => {
+          lockInBtn.style.animation = '';
+        }, 300);
+      }
+    });
+
+    return c;
+  }
+
+  // Final fallback: if step is unknown, reset to first step
+  vm.game1.step = 'cuisines';
+  vm.notify();
+  // Return empty container - will re-render on next notify
+  return c;
+}
+
+function renderGame2() {
+  // Define GENERIC_SCENARIO fallback
+  const GENERIC_SCENARIO = {
+    text: "Scenario: You're in a situation where you need to make a decision that affects your relationship. What's your approach?",
+    options: [
+      { text: "Talk it through together and find a solution.", tags: ["collaborative", "communicative", "secure"] },
+      { text: "Take some space to think, then discuss.", tags: ["solo-processor", "needs-space", "reflective"] },
+      { text: "Go with your gut and act on it.", tags: ["intuitive", "decisive", "independent"] }
+    ]
+  };
+
+  const c = document.createElement('div');
+  c.className = 'flex flex-col h-full bg-gray-50';
+
+  // Defensive fallback: ensure step is always valid
+  const validSteps = ['pickShows', 'pickCharacter', 'scenario', 'nextShowChoice', 'done'];
+  if (!vm.game2.step || !validSteps.includes(vm.game2.step)) {
+    vm.game2.step = 'pickShows';
+  }
+  
+  // Ensure currentShowId is set if step requires it
+  if ((vm.game2.step === 'pickCharacter' || vm.game2.step === 'scenario' || vm.game2.step === 'nextShowChoice')) {
+    if (!vm.game2.currentShowId) {
+      if (vm.game2.showQueue && vm.game2.showQueue.length > 0) {
+        vm.game2.currentShowId = vm.game2.showQueue[vm.game2.currentShowIndex || 0];
+      } else if (vm.game2.selectedShows && vm.game2.selectedShows.length > 0) {
+        vm.game2.currentShowId = vm.game2.selectedShows[0];
+        if (!vm.game2.showQueue) vm.game2.showQueue = [...vm.game2.selectedShows];
+        if (vm.game2.currentShowIndex === undefined) vm.game2.currentShowIndex = 0;
+      } else {
+        // No shows selected, go back to pickShows
+        vm.game2.step = 'pickShows';
+      }
+    }
+  }
+  const step = vm.game2.step;
+  const selectedCount = vm.game2.selectedShows.length;
+  const selectedShowNames = vm.game2.selectedShows.map(id => {
+    const show = SHOWS.find(s => s.id === id);
+    return show ? show.name : '';
+  }).filter(Boolean);
+
+  // STEP 1: Show Selection
+  if (step === 'pickShows') {
+  c.innerHTML = `
+    <div class="p-6 pt-10 bg-white border-b border-gray-100">
+      <div class="flex items-center justify-between">
+        <button id="back" class="p-2 rounded-full hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-500"></i></button>
+        <div class="text-base font-extrabold text-gray-900">Game 2 · TV Vibes</div>
+        <div class="flex items-center gap-2">
+        <button id="skip" class="text-xs font-bold text-indigo-600 hover:underline">Skip</button>
+          <button id="profileBtn" class="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1 text-xs font-extrabold text-gray-700">
+            <i data-lucide="user" class="w-3 h-3"></i>
+            <span>Profile</span>
+          </button>
+      </div>
+      </div>
+      <div class="mt-4">
+          <div class="text-2xl font-extrabold text-gray-900">Pick your TV worlds</div>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6 pb-44">
+        <div class="grid grid-cols-2 gap-4" id="shows-grid"></div>
+    </div>
+
+      <div class="sticky bg-white border-t border-gray-100 p-4" style="bottom: 84px;">
+        ${selectedCount === 0 ? `
+          <div class="text-xs text-gray-500 mb-2 text-center">Pick at least 1 show</div>
+          <button id="continue-btn" class="w-full px-6 py-3 rounded-xl font-extrabold shadow-lg bg-gray-200 text-gray-500 cursor-not-allowed" disabled>Continue</button>
+        ` : `
+          <div class="text-xs text-gray-500 mb-2 text-center">Selected: ${escapeHtml(selectedShowNames.slice(0, 3).join(', '))} ${selectedCount > 3 ? '(+ more)' : ''}</div>
+          <button id="continue-btn" class="w-full px-6 py-3 rounded-xl font-extrabold shadow-lg bg-indigo-600 text-white hover:bg-indigo-700 transition active:scale-95">Continue</button>
+        `}
+        </div>
+    `;
+
+    c.querySelector('#back').addEventListener('click', () => {
+      // If at pickShows, go to Game 1, otherwise go to previous Game 2 step
+      if (vm.game2.step === 'pickShows') {
+        vm.go('game1');
+      } else {
+        // Go back to pickShows
+        vm.game2.step = 'pickShows';
+        vm.game2.currentShowId = null;
+        vm.game2.activeCharacterId = null;
+        vm.notify();
+      }
+    });
+    c.querySelector('#skip').addEventListener('click', () => vm.continueFromGame2(true));
+
+    const showsGrid = c.querySelector('#shows-grid');
+    SHOWS.forEach(show => {
+      const isSelected = vm.game2.selectedShows.includes(show.id);
+      const selectionIndex = vm.game2.selectedShows.indexOf(show.id) + 1;
+      
+      const showCard = document.createElement('button');
+      showCard.className = `relative bg-white rounded-2xl p-4 card-shadow text-left transition hover:shadow-lg ${
+        isSelected ? 'ring-2 ring-indigo-500 bg-indigo-50' : ''
+      }`;
+      showCard.innerHTML = `
+        <div class="text-base font-extrabold text-gray-900">${escapeHtml(show.name)}</div>
+        <div class="mt-1">
+          <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-bold">${escapeHtml(show.category)}</span>
+      </div>
+        ${isSelected ? `<div class="absolute top-2 right-2 px-2 py-1 rounded-full bg-indigo-600 text-white text-[10px] font-extrabold">Selected ${selectionIndex}</div>` : ''}
+      `;
+      showCard.addEventListener('click', () => {
+        if (isSelected) {
+          vm.game2.selectedShows = vm.game2.selectedShows.filter(id => id !== show.id);
+        } else {
+          if (vm.game2.selectedShows.length < 3) {
+            vm.game2.selectedShows.push(show.id);
+          } else {
+            // Max 3 shows selected - show gentle feedback
+            const msg = document.createElement('div');
+            msg.className = 'fixed top-20 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm z-50';
+            msg.style.left = '50%';
+            msg.style.transform = 'translateX(-50%)';
+            msg.style.maxWidth = '90%';
+            msg.style.boxSizing = 'border-box';
+            msg.textContent = 'Max 3 shows';
+            document.body.appendChild(msg);
+            setTimeout(() => {
+              if (msg.parentNode) msg.parentNode.removeChild(msg);
+            }, 1500);
+          }
+        }
+        vm.notify();
+      });
+      showsGrid.appendChild(showCard);
+    });
+
+    const continueBtn = c.querySelector('#continue-btn');
+    
+    if (continueBtn) {
+      if (continueBtn.disabled) {
+        // Disabled state - show shake animation
+        continueBtn.addEventListener('click', () => {
+          continueBtn.style.animation = 'shake 0.3s ease-in-out';
+          setTimeout(() => {
+            continueBtn.style.animation = '';
+          }, 300);
+        });
+      } else {
+        // Enabled state - advance to character selection
+        continueBtn.addEventListener('click', () => {
+          // Set up show queue
+          vm.game2.showQueue = [...vm.game2.selectedShows];
+          vm.game2.currentShowIndex = 0;
+          vm.game2.currentShowId = vm.game2.showQueue[0];
+          vm.game2.activeShowIndex = 0;
+          vm.game2.step = 'pickCharacter';
+          vm.notify();
+        });
+      }
+    }
+
+    return c;
+  }
+
+  // STEP 2: Character Selection (for current show)
+  if (step === 'pickCharacter') {
+    const currentShowId = vm.game2.currentShowId || (vm.game2.showQueue && vm.game2.showQueue[vm.game2.currentShowIndex]) || (vm.game2.selectedShows && vm.game2.selectedShows[vm.game2.activeShowIndex]);
+    const currentShow = SHOWS.find(s => s.id === currentShowId);
+    
+    if (!currentShow || !currentShowId) {
+      // Fallback if show not found - go back to show selection
+      vm.game2.step = 'pickShows';
+      vm.game2.currentShowId = null;
+      vm.notify();
+      return c;
+    }
+
+    c.innerHTML = `
+      <div class="p-6 pt-10 bg-white border-b border-gray-100">
+        <div class="flex items-center justify-between">
+          <button id="back" class="p-2 rounded-full hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-500"></i></button>
+          <div class="text-base font-extrabold text-gray-900">Game 2 · TV Vibes</div>
+          <div class="flex items-center gap-2">
+            <button id="skip" class="text-xs font-bold text-indigo-600 hover:underline">Skip</button>
+            <button id="profileBtn" class="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1 text-xs font-extrabold text-gray-700">
+              <i data-lucide="user" class="w-3 h-3"></i>
+              <span>Profile</span>
+            </button>
+          </div>
+        </div>
+        <div class="mt-4">
+          <div class="text-2xl font-extrabold text-gray-900">Pick your character from ${escapeHtml(currentShow.name)}</div>
+        </div>
+    </div>
+
+      <div class="flex-1 overflow-y-auto p-6 pb-44" id="characters-container"></div>
+    `;
+
+    c.querySelector('#back').addEventListener('click', () => {
+      // Go back to show selection
+      vm.game2.step = 'pickShows';
+      // Clear temporary state but keep answers
+      vm.game2.currentShowId = null;
+      vm.game2.activeCharacterId = null;
+      // Ensure we have valid state
+      if (!vm.game2.selectedShows || vm.game2.selectedShows.length === 0) {
+        // If no shows selected, go to Game 1
+        vm.go('game1');
+      } else {
+        vm.notify();
+      }
+    });
+    const profileBtn = c.querySelector('#profileBtn');
+    if (profileBtn) {
+      profileBtn.addEventListener('click', () => {
+        vm.ui.profileOpen = true;
+        vm.notify();
+      });
+    }
+    // Character selection handlers
+    const charactersContainer = c.querySelector('#characters-container');
+    const skipBtn = c.querySelector('#skip');
+    if (skipBtn) {
+      skipBtn.addEventListener('click', () => vm.continueFromGame2(true));
+    }
+
+    const container = c.querySelector('#characters-container');
+    
+    const section = document.createElement('div');
+    section.className = 'bg-white rounded-2xl p-4 card-shadow';
+    section.innerHTML = `
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-base font-extrabold text-gray-900">${escapeHtml(currentShow.name)}</div>
+        <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-bold">${escapeHtml(currentShow.category)}</span>
+      </div>
+      <div class="space-y-3" id="chars-${currentShowId}"></div>
+    `;
+
+    const charsList = section.querySelector(`#chars-${currentShowId}`);
+    currentShow.characters.forEach(ch => {
+      const key = currentShowId + ":" + ch.id;
+      const card = document.createElement('button');
+      card.className = 'w-full bg-white rounded-2xl p-4 card-shadow text-left transition hover:shadow-lg';
+      card.innerHTML = `
+        <div class="text-sm font-extrabold text-gray-900 leading-tight">${escapeHtml(ch.displayName)}</div>
+        <div class="text-[11px] text-gray-600 mt-1">${escapeHtml((ch.traits || []).slice(0, 2).join(", "))}</div>
+      `;
+      card.addEventListener('click', () => {
+        vm.game2.activeCharacterId = key;
+        vm.game2.step = 'scenario';
+        vm.notify();
+      });
+      charsList.appendChild(card);
+    });
+
+    container.appendChild(section);
+
+    return c;
+  }
+
+  // STEP 3: Scenario
+  if (step === 'scenario') {
+    const charKey = vm.game2.activeCharacterId;
+    
+    // Defensive check: if no character selected, go back to character selection
+    if (!charKey) {
+      vm.game2.step = 'pickCharacter';
+      // Ensure currentShowId is set
+      if (!vm.game2.currentShowId && vm.game2.showQueue && vm.game2.showQueue.length > 0) {
+        vm.game2.currentShowId = vm.game2.showQueue[vm.game2.currentShowIndex || 0];
+      }
+      vm.notify();
+      return c;
+    }
+    
+    const [showId, charId] = charKey.split(':');
+    const show = SHOWS.find(s => s.id === showId);
+    const character = show?.characters.find(c => c.id === charId);
+    const scenarioKey = `${showId}:${charId}`;
+    const scenario = CHARACTER_SCENARIOS[scenarioKey] || GENERIC_SCENARIO;
+
+    c.innerHTML = `
+      <div class="p-6 pt-10 bg-white border-b border-gray-100">
+        <div class="flex items-center justify-between">
+          <button id="back" class="p-2 rounded-full hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-500"></i></button>
+          <div class="text-base font-extrabold text-gray-900">Game 2 · TV Vibes</div>
+          <div class="flex items-center gap-2">
+            <button id="skip" class="text-xs font-bold text-indigo-600 hover:underline">Skip</button>
+            <button id="profileBtn" class="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1 text-xs font-extrabold text-gray-700">
+              <i data-lucide="user" class="w-3 h-3"></i>
+              <span>Profile</span>
+      </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6 pb-44">
+        <div class="bg-white rounded-3xl p-6 card-shadow">
+          <div class="text-xs font-extrabold text-indigo-600 mb-2">Scenario: ${escapeHtml(character?.displayName || 'Character')}</div>
+          <div class="text-lg font-extrabold text-gray-900 leading-relaxed mb-6">${escapeHtml(scenario.text)}</div>
+          <div class="space-y-3" id="scenario-options"></div>
+      </div>
+    </div>
+  `;
+
+    c.querySelector('#back').addEventListener('click', () => {
+      // Ensure we have a valid show to go back to
+      if (vm.game2.currentShowId || (vm.game2.showQueue && vm.game2.showQueue.length > 0)) {
+        vm.game2.step = 'pickCharacter';
+        vm.game2.activeCharacterId = null;
+        // Ensure currentShowId is set
+        if (!vm.game2.currentShowId && vm.game2.showQueue && vm.game2.showQueue.length > 0) {
+          vm.game2.currentShowId = vm.game2.showQueue[vm.game2.currentShowIndex || 0];
+        }
+        vm.notify();
+      } else {
+        // No valid show, go back to show selection or Game 1
+        if (vm.game2.selectedShows && vm.game2.selectedShows.length > 0) {
+          vm.game2.step = 'pickShows';
+          vm.notify();
+        } else {
+          vm.go('game1');
+        }
+      }
+    });
+    const profileBtn = c.querySelector('#profileBtn');
+    if (profileBtn) {
+      profileBtn.addEventListener('click', () => {
+        vm.ui.profileOpen = true;
+        vm.notify();
+      });
+    }
+    // Scenario option handlers
+    const scenarioOptions = c.querySelector('#scenario-options');
+  c.querySelector('#skip').addEventListener('click', () => vm.continueFromGame2(true));
+
+    const optionsContainer = c.querySelector('#scenario-options');
+    scenario.options.forEach((option, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'w-full px-6 py-4 rounded-xl text-left font-extrabold bg-gray-50 border-2 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition text-sm';
+      btn.textContent = option.text;
+      btn.addEventListener('click', () => {
+        // Highlight selected, fade others
+        scenario.options.forEach((_, i) => {
+          const optBtn = optionsContainer.children[i];
+          if (i === idx) {
+            optBtn.className = 'w-full px-6 py-4 rounded-xl text-left font-extrabold bg-indigo-50 border-2 border-indigo-500 transition text-sm';
+          } else {
+            optBtn.className = 'w-full px-6 py-4 rounded-xl text-left font-extrabold bg-gray-50 border-2 border-gray-200 opacity-50 transition text-sm';
+          }
+        });
+        setTimeout(() => {
+          // Store answer
+          vm.game2.answers.push({ 
+            showId, 
+            characterId: charId, 
+            key: charKey,
+            scenarioText: scenario.text,
+            chosenOptionText: option.text, 
+            optionIndex: idx 
+          });
+          
+          // Check if there are more shows in the queue
+          if (vm.game2.showQueue && vm.game2.currentShowIndex < vm.game2.showQueue.length - 1) {
+            // More shows left - show choice screen
+            vm.game2.step = 'nextShowChoice';
+          } else {
+            // No more shows - go to chat
+            vm.game2.step = 'done';
+            vm.go('chat');
+          }
+          vm.notify();
+        }, 250);
+      });
+      optionsContainer.appendChild(btn);
+    });
+
+    return c;
+  }
+
+  // STEP 4: Next Show Choice
+  if (step === 'nextShowChoice') {
+    // Defensive check: ensure we have a valid queue and current index
+    if (!vm.game2.showQueue || vm.game2.showQueue.length === 0 || vm.game2.currentShowIndex === undefined) {
+      // Invalid state - go back to show selection
+      vm.game2.step = 'pickShows';
+      vm.notify();
+      return c;
+    }
+    
+    const nextShow = SHOWS.find(s => s.id === vm.game2.showQueue[vm.game2.currentShowIndex + 1]);
+    const nextShowName = nextShow ? nextShow.name : 'next show';
+    
+    c.innerHTML = `
+      <div class="p-6 pt-10 bg-white border-b border-gray-100">
+      <div class="flex items-center justify-between">
+          <button id="back" class="p-2 rounded-full hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-500"></i></button>
+          <div class="text-base font-extrabold text-gray-900">Game 2 · TV Vibes</div>
+          <button id="skip" class="text-xs font-bold text-indigo-600 hover:underline">Skip</button>
+      </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6 pb-44">
+        <div class="bg-white rounded-3xl p-6 card-shadow text-center">
+          <div class="text-lg font-extrabold text-gray-900 mb-4">Round ${vm.game2.currentShowIndex + 1} complete. Want to continue?</div>
+          <div class="space-y-3 mt-6">
+            <button id="continue-next" class="w-full px-6 py-4 rounded-xl font-extrabold bg-indigo-600 text-white hover:bg-indigo-700 transition active:scale-95">
+              Continue to next show
+            </button>
+            <button id="skip-to-chat" class="w-full px-6 py-4 rounded-xl font-extrabold border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 transition active:scale-95">
+              Skip to chatbot
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    c.querySelector('#back').addEventListener('click', () => {
+      // Go back to scenario step if we have a character, otherwise to character selection
+      if (vm.game2.activeCharacterId) {
+        vm.game2.step = 'scenario';
+        vm.notify();
+      } else if (vm.game2.currentShowId || (vm.game2.showQueue && vm.game2.showQueue.length > 0)) {
+        vm.game2.step = 'pickCharacter';
+        if (!vm.game2.currentShowId && vm.game2.showQueue && vm.game2.showQueue.length > 0) {
+          vm.game2.currentShowId = vm.game2.showQueue[vm.game2.currentShowIndex || 0];
+        }
+        vm.notify();
+      } else {
+        // Fallback to pickShows or Game 1
+        if (vm.game2.selectedShows && vm.game2.selectedShows.length > 0) {
+          vm.game2.step = 'pickShows';
+          vm.notify();
+        } else {
+          vm.go('game1');
+        }
+      }
+    });
+    c.querySelector('#skip').addEventListener('click', () => {
+      vm.game2.step = 'done';
+      vm.go('chat');
+    });
+
+    c.querySelector('#continue-next').addEventListener('click', () => {
+      // Move to next show
+      vm.game2.currentShowIndex += 1;
+      vm.game2.currentShowId = vm.game2.showQueue[vm.game2.currentShowIndex];
+      vm.game2.activeShowIndex = vm.game2.currentShowIndex;
+      // Reset per-show state
+      vm.game2.activeCharacterId = null;
+      // Go back to character selection
+      vm.game2.step = 'pickCharacter';
+      vm.notify();
+    });
+
+    c.querySelector('#skip-to-chat').addEventListener('click', () => {
+      vm.game2.step = 'done';
+      vm.go('chat');
+    });
+
+    return c;
+  }
+
+  // Final fallback: if step is unknown, reset to pickShows
+  vm.game2.step = 'pickShows';
+  // Return empty container - will re-render on next notify
+  return c;
+}
+
+function renderTvCard(ch) {
+  const key = ch.showId + ":" + ch.id;
+  const selected = vm.game2.answers && vm.game2.answers.some(a => {
+    const answerKey = a.key || `${a.showId}:${a.characterId}`;
+    return answerKey === key;
+  });
+  const imgUrl = vm.resolveCharacterImage(ch);
+
+  const card = document.createElement('div');
+  card.className = 'tv-card';
+  card.innerHTML = `
+    <div class="relative">
+      <img class="tv-img" src="${escapeHtml(imgUrl)}" alt="${escapeHtml(ch.displayName)}"
+           loading="lazy"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+      <div class="tv-img-fallback" style="display:none;">${escapeHtml((ch.displayName || "??").split(" ").map(s=>s[0]).join("").slice(0,2).toUpperCase())}</div>
+      ${selected ? `<div class="absolute top-2 right-2 px-2 py-1 rounded-full bg-indigo-600 text-white text-[10px] font-extrabold">Picked</div>` : ``}
+    </div>
+
+    <div class="p-3">
+      <div class="text-sm font-extrabold text-gray-900 leading-tight">${escapeHtml(ch.displayName)}</div>
+      <div class="text-[11px] text-gray-500 mt-1">${escapeHtml(ch.showName || "")}</div>
+      <div class="text-[11px] text-gray-700 mt-2">${escapeHtml((ch.traits || []).slice(0,2).join(", "))}</div>
+
+      <div class="mt-3">
+        <div class="text-[10px] text-gray-400 font-bold">Feels like you when dating</div>
+        <button class="mt-2 w-full px-3 py-1 rounded-full text-xs font-extrabold transition ${
+          selected ? 'bg-indigo-600 text-white' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+        }" data-pick="${escapeHtml(key)}">
+          ${selected ? 'Unpick' : 'Choose'}
+        </button>
+      </div>
+    </div>
+  `;
+  // Note: toggleGame2Pick removed - Game 2 now uses different flow
+  // card.querySelector('button[data-pick]').addEventListener('click', () => {});
+  return card;
+}
+
+function renderChat() {
+  const chatContainer = document.createElement('div');
+  chatContainer.className = 'flex flex-col h-full';
+
+  const header = document.createElement('div');
+  header.className = 'p-4 bg-white shadow-sm flex items-center justify-between border-b border-gray-100';
+  header.innerHTML = `
+    <button id="back"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-500"></i></button>
+    <div class="text-base font-extrabold text-gray-900">PUZZLES Guide</div>
+    <button id="dev-toggle"><i data-lucide="${vm.devControlsEnabled ? 'eye-off' : 'eye'}" class="w-5 h-5 text-indigo-500"></i></button>
+  `;
+  header.querySelector('#back')
+  .addEventListener('click', () => {
+    vm.go('game2');
+  });
+
+  header.querySelector('#dev-toggle').addEventListener('click', () => { vm.devControlsEnabled = !vm.devControlsEnabled; vm.notify(); });
+  chatContainer.appendChild(header);
+
+  chatContainer.appendChild(renderDevPanel());
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'chat-area-wrapper bg-gray-50';
+
+  const chatContent = document.createElement('div');
+  chatContent.id = 'chat-content';
+  chatContent.className = 'chat-content';
+
+  vm.messages.forEach(msg => chatContent.appendChild(renderMessageBubble(msg)));
+
+  wrapper.appendChild(chatContent);
+  chatContainer.appendChild(wrapper);
+  chatContainer.appendChild(renderChatInput());
+
+  return chatContainer;
+}
+
+function renderDevPanel() {
+  const panel = document.createElement('div');
+  panel.className = vm.devControlsEnabled ? 'dev-panel p-3 bg-gray-100' : 'dev-panel collapsed';
+
+  const entries = Object.entries(vm.layerConfidence).map(([layer, conf]) => {
+    const pct = Math.round(conf*100);
+    return `<div class="text-xs mb-1 flex justify-between items-center">
+      <div><strong>${escapeHtml(layer.split('(')[0].trim())}:</strong> <span class="font-mono text-indigo-700">${pct}%</span></div>
+      <div class="text-[10px] text-gray-500">Integrity: ${vm.integrityScore}/10</div>
+    </div>`;
+  }).join('');
+
+  panel.innerHTML = `<div class="font-extrabold text-gray-700 text-sm mb-2">Layer Confidence</div>${entries}`;
+  return panel;
+}
+
+function renderMessageBubble(message) {
+  const bubbleContainer = document.createElement('div');
+  const isBot = message.sender === Sender.BOT;
+  bubbleContainer.className = `flex mb-3 ${isBot ? 'justify-start' : 'justify-end'} px-2`;
+
+  const bubble = document.createElement('div');
+  let bubbleClass = 'max-w-[82%] px-4 py-3 shadow-md text-sm';
+  bubbleClass += isBot ? ' bot-bubble' : ' user-bubble';
+  if (!isBot && message.isQuickReplySelection) bubbleClass += ' bg-teal-500 text-xs';
+
+  let layerTagHtml = '';
+  if (vm.devControlsEnabled && isBot && message.relatedLayer) {
+    layerTagHtml = `<div class="text-[10px] font-extrabold mb-1 text-indigo-700 opacity-80">${escapeHtml(message.relatedLayer.split('(')[0].trim().toUpperCase())}</div>`;
+  }
+
+  bubble.className = bubbleClass;
+  bubble.innerHTML = layerTagHtml + renderMarkdown(message.text);
+
+  bubbleContainer.appendChild(bubble);
+  return bubbleContainer;
+}
+
+function renderChatInput() {
+  const inputBar = document.createElement('div');
+  inputBar.className = 'chat-input-bar flex flex-col space-y-2 pb-5 pt-2 px-4';
+
+  if (vm.availableQuickReplies && vm.availableQuickReplies.length > 0) {
+    const chips = document.createElement('div');
+    chips.className = 'flex flex-wrap gap-2';
+    vm.availableQuickReplies.forEach(r => {
+      const chip = document.createElement('button');
+      chip.className = 'chip';
+      chip.textContent = r;
+      chip.addEventListener('click', () => vm.handleChatChip(r));
+      chips.appendChild(chip);
+    });
+    inputBar.appendChild(chips);
+  }
+
+  const inputGroup = document.createElement('div');
+  inputGroup.className = 'flex items-center space-x-2';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.placeholder = vm.availableQuickReplies ? "Type if you want (or tap a chip)..." : "Your answer…";
+  input.className = 'flex-1 p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500';
+
+  const send = document.createElement('button');
+  send.className = 'p-3 bg-indigo-600 text-white rounded-full transition disabled:bg-gray-400';
+  send.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i>';
+  send.disabled = true;
+
+  input.addEventListener('input', () => { send.disabled = input.value.trim() === ''; });
+
+  const doSend = () => {
+    const v = input.value.trim();
+    if (!v) return;
+    vm.advanceChat(v, false);
+    input.value = '';
+    send.disabled = true;
+    setTimeout(scrollToBottom, 60);
+  };
+
+  send.addEventListener('click', doSend);
+  input.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !send.disabled) doSend(); });
+
+  inputGroup.appendChild(input);
+  inputGroup.appendChild(send);
+  inputBar.appendChild(inputGroup);
+
+  return inputBar;
+}
+
+function renderProfileOverlay() {
+  const summary = vm.getSummary();
+  const overlay = document.createElement('div');
+  overlay.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+  overlay.style.zIndex = '9999';
+  
+  const container = document.createElement('div');
+  container.className = 'bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col';
+  container.style.zIndex = '10000';
+  
+  // Calculate live stats
+  const cuisinesCount = vm.game1.cuisines ? vm.game1.cuisines.length : 0;
+  const activitiesCount = vm.game1.activities ? vm.game1.activities.length : 0;
+  const showsCount = vm.game2.selectedShows ? vm.game2.selectedShows.length : 0;
+  const scenariosCount = vm.game2.answers ? vm.game2.answers.length : 0;
+  
+  const archetypeMeta = (() => {
+    switch(summary.archetype) {
+      case "Explorer": return { icon:"navigation-2", color:"bg-yellow-400", label:"Adventure Seeker" };
+      case "Soother": return { icon:"hand-heart", color:"bg-pink-400", label:"Comfort Creator" };
+      case "Fixer": return { icon:"message-square", color:"bg-red-400", label:"Repair-First Communicator" };
+      case "Director": return { icon:"briefcase", color:"bg-purple-400", label:"Goal Director" };
+      default: return { icon:"sparkles", color:"bg-indigo-400", label:"Discovery Mode" };
+    }
+  })();
+  
+  container.innerHTML = `
+    <div class="p-6 pt-10 bg-white shadow-sm border-b border-gray-100 flex items-center justify-between">
+      <div>
+        <div class="text-2xl font-extrabold text-gray-900">Profile Snapshot</div>
+        <div class="text-xs text-gray-500 mt-1">Your vibe at a glance</div>
+      </div>
+      <button id="closeProfileOverlay" class="p-2 rounded-full hover:bg-gray-100"><i data-lucide="x" class="w-5 h-5 text-gray-500"></i></button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-4">
+      <div class="bg-white rounded-3xl p-6 card-shadow text-center">
+        <div class="w-20 h-20 rounded-full ${archetypeMeta.color} flex items-center justify-center shadow mx-auto mb-4">
+          <i data-lucide="${archetypeMeta.icon}" class="w-10 h-10 text-white"></i>
+        </div>
+        <div class="text-xs font-extrabold text-indigo-600">YOUR PERSONA</div>
+        <div class="text-3xl font-extrabold text-indigo-600 mt-1">${escapeHtml(summary.archetype)}</div>
+        <div class="text-xs text-gray-500 mt-2">${escapeHtml(archetypeMeta.label)}</div>
+      </div>
+
+      <div class="bg-gray-50 rounded-2xl p-4">
+        <div class="text-xs font-extrabold text-gray-700 mb-3">Live Stats</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-white rounded-xl p-3 text-center">
+            <div class="text-2xl font-extrabold text-indigo-600">${cuisinesCount}</div>
+            <div class="text-xs text-gray-500 mt-1">Cuisines</div>
+          </div>
+          <div class="bg-white rounded-xl p-3 text-center">
+            <div class="text-2xl font-extrabold text-indigo-600">${activitiesCount}</div>
+            <div class="text-xs text-gray-500 mt-1">Activities</div>
+          </div>
+          <div class="bg-white rounded-xl p-3 text-center">
+            <div class="text-2xl font-extrabold text-indigo-600">${showsCount}</div>
+            <div class="text-xs text-gray-500 mt-1">Shows</div>
+          </div>
+          <div class="bg-white rounded-xl p-3 text-center">
+            <div class="text-2xl font-extrabold text-indigo-600">${scenariosCount}</div>
+            <div class="text-xs text-gray-500 mt-1">Scenarios</div>
+          </div>
+        </div>
+      </div>
+
+      ${summary.needs && summary.needs.length > 0 ? `
+        <div class="bg-white rounded-2xl p-4 card-shadow">
+          <div class="text-xs font-extrabold text-gray-700 mb-2">Top Traits</div>
+          <div class="flex flex-wrap gap-2">
+            ${summary.needs.slice(0, 5).map(n => `<span class="px-2 py-1 rounded-full bg-pink-50 text-pink-700 text-xs font-extrabold">${escapeHtml(n)}</span>`).join('')}
+          </div>
+        </div>
+      ` : ''}
+
+      <button id="viewFullSummary" class="w-full px-6 py-3 rounded-xl font-extrabold bg-indigo-600 text-white hover:bg-indigo-700 transition active:scale-95 shadow-lg">
+        View Full Summary →
+      </button>
+    </div>
+  `;
+  
+  overlay.appendChild(container);
+  
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      vm.ui.profileOpen = false;
+      vm.notify();
+    }
+  });
+  
+  container.querySelector('#closeProfileOverlay').addEventListener('click', () => {
+    vm.ui.profileOpen = false;
+    vm.notify();
+  });
+  
+  container.querySelector('#viewFullSummary').addEventListener('click', () => {
+    vm.ui.profileOpen = false;
+    vm.go('summary');
+  });
+  
+  return overlay;
+}
+
+function renderSummary() {
+  const s = vm.getSummary();
+
+  const c = document.createElement('div');
+  c.className = 'flex flex-col h-full bg-gray-50';
+
+  const archetypeMeta = (() => {
+    switch(s.archetype) {
+      case "Explorer": return { icon:"navigation-2", color:"bg-yellow-400", label:"Adventure Seeker" };
+      case "Soother": return { icon:"hand-heart", color:"bg-pink-400", label:"Comfort Creator" };
+      case "Fixer": return { icon:"message-square", color:"bg-red-400", label:"Repair-First Communicator" };
+      case "Director": return { icon:"briefcase", color:"bg-purple-400", label:"Goal Director" };
+      default: return { icon:"sparkles", color:"bg-indigo-400", label:"Discovery Mode" };
+    }
+  })();
+
+  // Get live data for evolving summary
+  const selectedCuisines = vm.game1.cuisines || [];
+  const selectedActivities = vm.game1.activities || [];
+  const selectedShows = vm.game2.selectedShows || [];
+  const scenarioAnswers = vm.game2.answers || [];
+  
+  // Get cuisine and activity labels
+  const cuisineLabels = selectedCuisines.map(id => {
+    const cuisine = GAME1_CUISINES.find(c => c.id === id);
+    return cuisine ? cuisine.label : '';
+  }).filter(Boolean);
+  
+  const activityLabels = selectedActivities.map(id => {
+    const activity = GAME1_ACTIVITIES.find(a => a.id === id);
+    return activity ? activity.label : '';
+  }).filter(Boolean);
+
+  c.innerHTML = `
+    <div class="p-6 pt-10 bg-white border-b border-gray-100">
+      <div class="flex items-center justify-between">
+        <button id="back" class="p-2 rounded-full hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-500"></i></button>
+        <div class="text-base font-extrabold text-gray-900">Your Summary</div>
+        <button id="profileBtn" class="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1 text-xs font-extrabold text-gray-700">
+          <i data-lucide="user" class="w-3 h-3"></i>
+          <span>Profile</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-5 pb-44">
+      <!-- B1: Calm Welcome Section -->
+      <div class="bg-gradient-to-br from-indigo-50 to-pink-50 rounded-3xl p-6 card-shadow">
+        <div class="text-2xl font-extrabold text-gray-900 mb-2">Welcome back</div>
+        <div class="text-sm text-gray-600 leading-relaxed">Here's what we've learned about your vibe so far.</div>
+      </div>
+
+      <!-- B2: Evolving Summary Content -->
+      
+      <!-- Your Persona -->
+      ${s.archetype ? `
+      <div class="bg-white rounded-3xl p-6 card-shadow">
+          <div class="flex items-center gap-3 mb-4">
+          <div class="w-14 h-14 rounded-2xl ${archetypeMeta.color} flex items-center justify-center shadow">
+            <i data-lucide="${archetypeMeta.icon}" class="w-7 h-7 text-white"></i>
+          </div>
+          <div>
+              <div class="text-xs font-extrabold text-indigo-600">YOUR PERSONA</div>
+            <div class="text-2xl font-extrabold text-gray-900">${escapeHtml(s.archetype)}</div>
+            <div class="text-xs text-gray-500 font-semibold">${escapeHtml(archetypeMeta.label)}</div>
+          </div>
+        </div>
+          ${s.summaryText ? `
+            <div class="text-sm text-gray-700 leading-relaxed">${renderMarkdown(escapeHtml(s.summaryText))}</div>
+          ` : `
+            <div class="text-sm text-gray-500 italic">Your persona is still forming as you progress...</div>
+          `}
+        </div>
+      ` : `
+        <div class="bg-white rounded-3xl p-6 card-shadow">
+          <div class="text-sm text-gray-500 italic text-center py-4">Your persona will appear as you complete more steps...</div>
+        </div>
+      `}
+
+      <!-- What You Gravitate Toward -->
+      ${(selectedCuisines.length > 0 || selectedActivities.length > 0) ? `
+        <div class="bg-white rounded-3xl p-5 card-shadow">
+          <div class="text-sm font-extrabold text-gray-900 mb-3">What You Gravitate Toward</div>
+          ${cuisineLabels.length > 0 ? `
+            <div class="mb-3">
+              <div class="text-xs font-semibold text-gray-600 mb-2">Cuisines</div>
+              <div class="flex flex-wrap gap-2">
+                ${cuisineLabels.map(label => `<span class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-extrabold">${escapeHtml(label)}</span>`).join('')}
+              </div>
+            </div>
+          ` : ''}
+          ${activityLabels.length > 0 ? `
+            <div>
+              <div class="text-xs font-semibold text-gray-600 mb-2">Activities</div>
+              <div class="flex flex-wrap gap-2">
+                ${activityLabels.map(label => `<span class="px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-extrabold">${escapeHtml(label)}</span>`).join('')}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      ` : `
+        <div class="bg-white rounded-3xl p-5 card-shadow">
+          <div class="text-sm font-extrabold text-gray-900 mb-2">What You Gravitate Toward</div>
+          <div class="text-xs text-gray-500 italic">Complete Game 1 to see your preferences...</div>
+        </div>
+      `}
+
+      <!-- How You React in Scenarios -->
+      ${scenarioAnswers.length > 0 ? `
+        <div class="bg-white rounded-3xl p-5 card-shadow">
+          <div class="text-sm font-extrabold text-gray-900 mb-3">How You React in Scenarios</div>
+          <div class="text-xs text-gray-700 leading-relaxed">
+            Based on ${scenarioAnswers.length} scenario${scenarioAnswers.length > 1 ? 's' : ''}, you tend to ${scenarioAnswers.length > 0 ? 'show thoughtful responses and consider multiple perspectives' : 'approach situations with care'}.
+        </div>
+      </div>
+      ` : `
+        <div class="bg-white rounded-3xl p-5 card-shadow">
+          <div class="text-sm font-extrabold text-gray-900 mb-2">How You React in Scenarios</div>
+          <div class="text-xs text-gray-500 italic">Complete Game 2 scenarios to see insights...</div>
+        </div>
+      `}
+
+      <!-- Communication Style -->
+      ${vm.messages && vm.messages.length > 0 ? `
+      <div class="bg-white rounded-3xl p-5 card-shadow">
+          <div class="text-sm font-extrabold text-gray-900 mb-3">Communication Style</div>
+          <div class="text-xs text-gray-700 leading-relaxed">
+            ${vm.userName ? `You communicate with ${vm.userName}'s unique style.` : 'Your communication patterns are emerging from your chat responses.'}
+          </div>
+        </div>
+      ` : `
+        <div class="bg-white rounded-3xl p-5 card-shadow">
+          <div class="text-sm font-extrabold text-gray-900 mb-2">Communication Style</div>
+          <div class="text-xs text-gray-500 italic">Start chatting to discover your communication style...</div>
+        </div>
+      `}
+
+      <!-- Green Flags You Value -->
+      ${s.greenFlags && s.greenFlags.length > 0 ? `
+        <div class="bg-white rounded-3xl p-5 card-shadow">
+          <div class="text-sm font-extrabold text-gray-900 flex items-center gap-2 mb-3">
+          <i data-lucide="check-circle" class="w-5 h-5 text-green-500"></i>
+            Green flags you'll love
+        </div>
+        <div class="mt-3 space-y-2">
+          ${s.greenFlags.map(g => `
+            <div class="flex items-start gap-2 text-sm text-gray-700">
+              <span class="mt-1 w-2 h-2 rounded-full bg-green-500"></span>
+              <div>${escapeHtml(g)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      ` : ''}
+    </div>
+  `;
+
+  c.querySelector('#back').addEventListener('click', () => {
+    // Go back to previous screen or default to chat
+    if (vm.previousScreen && vm.previousScreen !== 'summary') {
+      vm.go(vm.previousScreen);
+    } else {
+      vm.go('chat');
+    }
+  });
+  
+  const profileBtn = c.querySelector('#profileBtn');
+  if (profileBtn) {
+    profileBtn.addEventListener('click', () => {
+      vm.ui.profileOpen = true;
+    vm.notify();
+  });
+  }
+
+  return c;
+}
+
+// renderTabs function removed - Tabs screen no longer exists
+
+function renderProfileScreen(summary) {
+  const container = document.createElement('div');
+  container.className = 'flex flex-col h-full bg-gray-50';
+
+  container.innerHTML = `
+    <div class="p-6 pt-10 bg-white shadow-sm border-b border-gray-100">
+      <div class="text-3xl font-extrabold text-gray-900">Profile Snapshot</div>
+      <div class="text-sm text-gray-500 mt-1">Clean + screenshot-friendly (not a second long summary).</div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-6 space-y-5">
+      <div class="bg-white rounded-3xl p-6 card-shadow text-center">
+        <div class="text-xs font-extrabold text-indigo-600">YOUR PERSONA</div>
+        <div class="text-4xl font-extrabold text-indigo-600 mt-1">${escapeHtml(summary.archetype)}</div>
+        <div class="text-xs text-gray-500 mt-2">Top needs + green flags below.</div>
+      </div>
+
+      <div class="bg-white rounded-3xl p-5 card-shadow">
+        <div class="text-sm font-extrabold text-gray-900">Top 3 Needs</div>
+        <div class="mt-3 space-y-2">
+          ${summary.needs.map(n => `
+            <div class="flex items-start gap-2 text-sm text-gray-700">
+              <i data-lucide="heart" class="w-4 h-4 text-pink-500 mt-0.5"></i>
+              <div>${escapeHtml(n)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="bg-white rounded-3xl p-5 card-shadow">
+        <div class="text-sm font-extrabold text-gray-900">Top 3 Green Flags</div>
+        <div class="mt-3 space-y-2">
+          ${summary.greenFlags.map(g => `
+            <div class="flex items-start gap-2 text-sm text-gray-700">
+              <i data-lucide="check-circle" class="w-4 h-4 text-green-500 mt-0.5"></i>
+              <div>${escapeHtml(g)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <button id="backSummary" class="w-full px-6 py-3 rounded-2xl bg-white border border-gray-200 text-gray-900 font-extrabold shadow hover:bg-gray-50 active:scale-95 transition">
+        Back to Summary
+      </button>
+
+      <div class="pb-20"></div>
+    </div>
+  `;
+
+  const closeBtn = container.querySelector('#closeProfile');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      // Go back to previous screen or default to chat
+      if (vm.previousScreen) {
+        vm.go(vm.previousScreen);
+      } else {
+        vm.go('chat');
+      }
+    });
+  }
+  return container;
+}
+
+const bangalorePlaces = [
+  { name: "Third Wave Coffee, Indiranagar", vibe: "Chill / Artsy", suggestedUse: "Solo Recharge", currentStars: 4, reward: "20% off coffee", archetypeFit: "Soother" },
+  { name: "GoKarting Track, Whitefield", vibe: "High Energy", suggestedUse: "Adventure Date", currentStars: 1, reward: "Free lap upgrade", archetypeFit: "Explorer" },
+  { name: "Gilly's Resto-Bar, Koramangala", vibe: "Loud / Social", suggestedUse: "Group Hang", currentStars: 5, reward: "VIP Entry Pass", archetypeFit: "Fixer" },
+  { name: "Cubbon Park Central Garden", vibe: "Calm / Growth", suggestedUse: "Deep Talk Date", currentStars: 2, reward: "Free book exchange", archetypeFit: "Self-Explorer" }
+];
+
+function renderMap() {
+  const summary = vm.getSummary();
+  return renderMapScreen(summary);
+}
+
+function renderMapScreen(summary) {
+  const container = document.createElement('div');
+  container.className = 'flex flex-col h-full bg-gray-50';
+
+  container.innerHTML = `
+    <div class="p-6 pt-10 bg-white shadow-sm border-b border-gray-100">
+      <div class="flex items-center justify-between">
+        <div>
+      <div class="text-3xl font-extrabold text-gray-900">Map Layer</div>
+      <div class="text-sm text-gray-500 mt-1">
+            This is your "go outside" layer — places that match your vibe.
+      </div>
+      <div class="text-xs text-gray-400 mt-2">
+            Prototype only: fake pins + rewards (we'll connect real locations later).
+          </div>
+        </div>
+        <button id="profileBtn" class="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1 text-xs font-extrabold text-gray-700">
+          <i data-lucide="user" class="w-3 h-3"></i>
+          <span>Profile</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      <div class="h-44 bg-gray-200 border-b border-gray-300 shadow-inner flex items-center justify-center relative">
+        <i data-lucide="map" class="w-12 h-12 text-teal-600 opacity-40 absolute"></i>
+        <div class="text-xl font-extrabold text-teal-700 z-10">Stylized Map Placeholder</div>
+      </div>
+
+      <div class="p-4 space-y-4">
+        ${bangalorePlaces.map(loc => {
+          const isMatch = loc.archetypeFit === summary.archetype;
+          return `
+            <div class="bg-white rounded-2xl p-4 card-shadow transition ${isMatch ? 'border-l-4 border-red-500' : 'border-l-4 border-gray-200'}">
+              <div class="flex justify-between items-start">
+                <div>
+                  <div class="font-extrabold text-lg text-gray-900">${escapeHtml(loc.name)}</div>
+                  <div class="text-xs text-gray-500 mt-1">Vibe: ${escapeHtml(loc.vibe)} · Use: ${escapeHtml(loc.suggestedUse)}</div>
+                </div>
+                ${isMatch ? '<span class="text-[10px] font-extrabold text-white px-2 py-1 bg-red-500 rounded-full">🔥 BEST FIT</span>' : ''}
+              </div>
+
+              <div class="flex justify-between items-center mt-3 border-t border-gray-100 pt-3">
+                <div class="text-xs text-indigo-600 font-extrabold">Reward: ${escapeHtml(loc.reward)} · Stars: ${loc.currentStars}/5</div>
+                <button class="text-xs px-3 py-1 bg-teal-500 text-white font-extrabold rounded-full hover:bg-teal-600 transition">Check In</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      <div class="pb-20"></div>
+    </div>
+  `;
+  
+  const profileBtn = container.querySelector('#profileBtn');
+  if (profileBtn) {
+    profileBtn.addEventListener('click', () => {
+      vm.ui.profileOpen = true;
+      vm.notify();
+    });
+  }
+  
+  return container;
+}
+
+vm.subscribe(render);
+render();
+
+</script>
+</body>
+</html>
