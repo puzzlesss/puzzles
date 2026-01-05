@@ -60,10 +60,11 @@
       overflow-y: auto;
       width: 100%;
       max-width: 100%;
+      background: #f5f5f5;
     }
 
     .chat-content {
-      padding: 10px 16px;
+      padding: 16px 12px;
       overflow-x: hidden;
       overflow-y: auto;
       flex-grow: 1;
@@ -71,32 +72,52 @@
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
+      background: #f5f5f5;
     }
 
     .chat-input-bar {
       flex-shrink: 0;
-      background: #f7f7f7;
+      background: white;
       border-top: 1px solid #e5e7eb;
-      padding: 10px;
+      padding: 12px 16px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
       box-sizing: border-box;
       width: 100%;
       max-width: 100%;
       overflow-x: hidden;
+      position: sticky;
+      bottom: 84px; /* Above bottom navigation (78px nav + 6px spacing) */
+      z-index: 10;
+    }
+    
+    /* Adjust chat content padding to account for sticky input bar */
+    #chat-content {
+      padding-bottom: 120px !important;
     }
 
     .bot-bubble {
-      background-color: #f1f5f9;
+      background-color: white;
       color: #111827;
-      border: 1px solid #e2e8f0;
-      border-radius: 1rem;
-      border-top-left-radius: 0.25rem;
+      border-radius: 18px;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
     .user-bubble {
       background-color: #4f46e5;
       color: white;
-      border-radius: 1rem;
-      border-top-right-radius: 0.25rem;
+      border-radius: 18px;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    
+    .animate-bounce {
+      animation: bounce 1.4s ease-in-out infinite;
     }
 
     .dev-panel {
@@ -883,13 +904,14 @@ class AppViewModel {
       [PuzzleLayer.BOUNDARIES]: 0.15,
     };
 
-    this.devControlsEnabled = true;
+    this.devControlsEnabled = false; // Default to false - hide debug info from users
     this.integrityScore = 8;
+    this.isTyping = false; // Track typing indicator state
 
     this.thisOrThatIndex = 0;
     this.thisOrThatAnswers = [];
 
-    this._pushBot("Welcome to PUZZLES. Tap start when you’re ready. ✨");
+    // Welcome message will be shown in UI, not pushed to messages
   }
 
   subscribe(cb) { this.subscribers.push(cb); cb(this); }
@@ -904,8 +926,13 @@ class AppViewModel {
   }
 
   _pushBot(text, replies=null, layer=null) {
+    // Hide typing indicator before showing message
+    this.isTyping = false;
     this.messages.push({ sender: Sender.BOT, text, quickReplyOptions: replies, relatedLayer: layer });
     this.availableQuickReplies = replies;
+    this.notify();
+    // Auto-scroll after message appears
+    setTimeout(scrollToBottom, 100);
   }
   _pushUser(text, isChip=false, layer=null) {
     this.messages.push({ sender: Sender.USER, text, isQuickReplySelection: isChip, relatedLayer: layer });
@@ -1088,6 +1115,19 @@ class AppViewModel {
 
     this._pushUser(userText, isChip);
 
+    // Show typing indicator immediately after user message
+    this.isTyping = true;
+    this.notify();
+    setTimeout(scrollToBottom, 50);
+    
+    // Process bot response with typing delay
+    const typingDelay = 600 + Math.random() * 600; // 600-1200ms randomized
+    setTimeout(() => {
+      this._processChatResponse(userText, isChip);
+    }, typingDelay);
+  }
+  
+  _processChatResponse(userText, isChip) {
     // 1. Name Input
     if (this.currentStep === ChatStep.NAME_INPUT) {
       this.userName = userText.trim().split(/\s+/)[0].slice(0,20);
@@ -1578,12 +1618,26 @@ function renderGame1() {
   const c = document.createElement('div');
   c.className = 'flex flex-col h-full bg-gray-50';
 
+  // C) Hard guard against invalid state - ensure selections arrays exist
+  // Add defensive initialization: if arrays are undefined, set them to []
+  // but DO NOT overwrite existing arrays
+  // Add defensive initialization: if arrays are undefined, set them to []
+  // but DO NOT overwrite existing arrays
+  if (vm.game1.cuisines === undefined || vm.game1.cuisines === null) vm.game1.cuisines = [];
+  if (vm.game1.activities === undefined || vm.game1.activities === null) vm.game1.activities = [];
+  if (!vm.game1.idealCombo) vm.game1.idealCombo = { cuisine: '', activity: '' };
+
   // Defensive fallback: ensure step is always valid
   const validSteps = ['cuisines', 'activities', 'combo'];
   if (!vm.game1.step || !validSteps.includes(vm.game1.step)) {
     vm.game1.step = 'cuisines';
   }
   const step = vm.game1.step;
+  
+  // E) Safety debug (temporary)
+  if (step === 'combo') {
+    console.log('[Game1 Debug] Step:', step, 'Cuisines:', vm.game1.cuisines.length, 'Activities:', vm.game1.activities.length);
+  }
 
   // STEP 1: Cuisines (Multi-select pills)
   if (step === 'cuisines') {
@@ -1659,8 +1713,10 @@ function renderGame1() {
     const continueBtn = c.querySelector('#continue');
     if (continueBtn && !continueBtn.disabled) {
       continueBtn.addEventListener('click', () => {
+        // B) Fix the transition logic - always set step and notify
         if (vm.game1.cuisines.length >= 3) {
           vm.game1.step = 'activities';
+          vm.screen = 'game1'; // Ensure screen is set
           vm.notify();
         }
       });
@@ -1748,8 +1804,10 @@ function renderGame1() {
     const continueBtn = c.querySelector('#continue');
     if (continueBtn && !continueBtn.disabled) {
       continueBtn.addEventListener('click', () => {
+        // B) Fix the transition logic - always set step and notify
         if (vm.game1.activities.length >= 3) {
           vm.game1.step = 'combo';
+          vm.screen = 'game1'; // Ensure screen is set
           vm.notify();
         }
       });
@@ -1776,6 +1834,59 @@ function renderGame1() {
 
   // STEP 3: Ideal Combo
   if (step === 'combo') {
+    // C) Combo screen must only render if both arrays have items, or show fallback
+    if (vm.game1.cuisines.length === 0 || vm.game1.activities.length === 0) {
+      // Fallback: go back to appropriate step with gentle message
+      const fallbackStep = vm.game1.cuisines.length === 0 ? 'cuisines' : 'activities';
+      c.innerHTML = `
+        <div class="p-6 pt-10 bg-white border-b border-gray-100">
+          <div class="flex items-center justify-between">
+            <button id="back" class="p-2 rounded-full hover:bg-gray-100"><i data-lucide="arrow-left" class="w-5 h-5 text-gray-500"></i></button>
+            <div class="text-base font-extrabold text-gray-900">Game 1</div>
+            <button id="profileBtn" class="p-2 rounded-full hover:bg-gray-100 flex items-center gap-1 text-xs font-extrabold text-gray-700">
+              <i data-lucide="user" class="w-3 h-3"></i>
+              <span>Profile</span>
+            </button>
+          </div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-6 pb-44 flex items-center justify-center">
+          <div class="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 max-w-sm text-center">
+            <div class="text-sm font-extrabold text-yellow-800 mb-4">
+              ${vm.game1.cuisines.length === 0 && vm.game1.activities.length === 0 
+                ? 'Please pick at least 1 cuisine and 1 activity to make a combo'
+                : vm.game1.cuisines.length === 0 
+                  ? 'Please pick at least 1 cuisine to make a combo'
+                  : 'Please pick at least 1 activity to make a combo'}
+            </div>
+            <button id="go-back" class="px-6 py-3 rounded-xl font-extrabold bg-indigo-600 text-white hover:bg-indigo-700 transition active:scale-95">
+              Go Back
+            </button>
+          </div>
+        </div>
+      `;
+      
+      c.querySelector('#back').addEventListener('click', () => {
+        vm.game1.step = 'activities';
+        vm.notify();
+      });
+      
+      const profileBtn = c.querySelector('#profileBtn');
+      if (profileBtn) {
+        profileBtn.addEventListener('click', () => {
+          vm.ui.profileOpen = true;
+          vm.notify();
+        });
+      }
+      
+      c.querySelector('#go-back').addEventListener('click', () => {
+        vm.game1.step = fallbackStep;
+        vm.notify();
+      });
+      
+      return c;
+    }
+    
+    // D) Fix combo screen option building - populate ONLY from selected arrays
     c.innerHTML = `
       <div class="p-6 pt-10 bg-white border-b border-gray-100">
         <div class="flex items-center justify-between">
@@ -1793,37 +1904,40 @@ function renderGame1() {
 
       <div class="flex-1 overflow-y-auto p-6 pb-44">
         <div class="space-y-4">
-          ${vm.game1.cuisines.length === 0 || vm.game1.activities.length === 0 ? `
-            <div class="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mb-4">
-              <div class="text-sm font-extrabold text-yellow-800">
-                ${vm.game1.cuisines.length === 0 && vm.game1.activities.length === 0 
-                  ? 'Pick at least 1 cuisine and 1 activity to make a combo'
-                  : vm.game1.cuisines.length === 0 
-                    ? 'Pick at least 1 cuisine to make a combo'
-                    : 'Pick at least 1 activity to make a combo'}
-              </div>
-            </div>
-          ` : ''}
           <div>
             <label class="text-sm font-extrabold text-gray-900 block mb-2">Cuisine</label>
             <select id="combo-cuisine" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 font-extrabold">
               <option value="">Select...</option>
-              ${vm.game1.cuisines.length > 0 ? vm.game1.cuisines.map(cid => {
-                const cuisine = GAME1_CUISINES.find(c => c.id === cid);
-                return cuisine ? `<option value="${cuisine.id}" ${vm.game1.idealCombo.cuisine === cuisine.id ? 'selected' : ''}>${escapeHtml(cuisine.label)}</option>` : '';
-              }).join('') : GAME1_CUISINES.map(c => `<option value="${c.id}" ${vm.game1.idealCombo.cuisine === c.id ? 'selected' : ''}>${escapeHtml(c.label)}</option>`).join('')}
+              ${(() => {
+                // Preserve original selection order from Step 1
+                // Use vm.game1.cuisines array directly (already in tap order)
+                const selectedCuisines = vm.game1.cuisines || [];
+                return selectedCuisines.map(cid => {
+                  const cuisine = GAME1_CUISINES.find(c => c.id === cid);
+                  if (!cuisine) return '';
+                  return `<option value="${cuisine.id}" ${vm.game1.idealCombo.cuisine === cuisine.id ? 'selected' : ''}>${escapeHtml(cuisine.label)}</option>`;
+                }).filter(Boolean).join('');
+              })()}
             </select>
+            ${vm.game1.cuisines.length === 0 ? '<div class="text-xs text-gray-500 mt-1">No cuisines selected</div>' : `<div class="text-xs text-gray-500 mt-1">${vm.game1.cuisines.length} option${vm.game1.cuisines.length > 1 ? 's' : ''} available</div>`}
           </div>
 
           <div>
             <label class="text-sm font-extrabold text-gray-900 block mb-2">Activity</label>
             <select id="combo-activity" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 font-extrabold">
               <option value="">Select...</option>
-              ${vm.game1.activities.length > 0 ? vm.game1.activities.map(aid => {
-                const activity = GAME1_ACTIVITIES.find(a => a.id === aid);
-                return activity ? `<option value="${activity.id}" ${vm.game1.idealCombo.activity === activity.id ? 'selected' : ''}>${escapeHtml(activity.emoji)} ${escapeHtml(activity.label)}</option>` : '';
-              }).join('') : GAME1_ACTIVITIES.map(a => `<option value="${a.id}" ${vm.game1.idealCombo.activity === a.id ? 'selected' : ''}>${escapeHtml(a.emoji)} ${escapeHtml(a.label)}</option>`).join('')}
+              ${(() => {
+                // Preserve original selection order from Step 2
+                // Use vm.game1.activities array directly (already in tap order)
+                const selectedActivities = vm.game1.activities || [];
+                return selectedActivities.map(aid => {
+                  const activity = GAME1_ACTIVITIES.find(a => a.id === aid);
+                  if (!activity) return '';
+                  return `<option value="${activity.id}" ${vm.game1.idealCombo.activity === activity.id ? 'selected' : ''}>${escapeHtml(activity.emoji)} ${escapeHtml(activity.label)}</option>`;
+                }).filter(Boolean).join('');
+              })()}
             </select>
+            ${vm.game1.activities.length === 0 ? '<div class="text-xs text-gray-500 mt-1">No activities selected</div>' : `<div class="text-xs text-gray-500 mt-1">${vm.game1.activities.length} option${vm.game1.activities.length > 1 ? 's' : ''} available</div>`}
           </div>
         </div>
       </div>
@@ -1836,11 +1950,18 @@ function renderGame1() {
     `;
 
     c.querySelector('#back').addEventListener('click', () => {
-      // Go back to activities step
+      // F) Back button from combo returns to activities (not blank)
       vm.game1.step = 'activities';
       vm.notify();
     });
-    c.querySelector('#skip').addEventListener('click', () => vm.continueFromGame1(true));
+    
+    const profileBtn = c.querySelector('#profileBtn');
+    if (profileBtn) {
+      profileBtn.addEventListener('click', () => {
+        vm.ui.profileOpen = true;
+        vm.notify();
+      });
+    }
 
     const cuisineSelect = c.querySelector('#combo-cuisine');
     const activitySelect = c.querySelector('#combo-activity');
@@ -2400,16 +2521,48 @@ function renderChat() {
   header.querySelector('#dev-toggle').addEventListener('click', () => { vm.devControlsEnabled = !vm.devControlsEnabled; vm.notify(); });
   chatContainer.appendChild(header);
 
+  // Only show dev panel if dev mode is enabled
+  if (vm.devControlsEnabled) {
   chatContainer.appendChild(renderDevPanel());
+  }
 
   const wrapper = document.createElement('div');
-  wrapper.className = 'chat-area-wrapper bg-gray-50';
+  wrapper.className = 'chat-area-wrapper flex-1 overflow-hidden';
 
   const chatContent = document.createElement('div');
   chatContent.id = 'chat-content';
   chatContent.className = 'chat-content';
 
+  // Show welcome message if chat is empty
+  if (vm.messages.length === 0) {
+    const welcomeBubble = renderMessageBubble({
+      sender: Sender.BOT,
+      text: "Welcome to PUZZLES. Tap start when you're ready. ✨",
+      isWelcome: true
+    });
+    chatContent.appendChild(welcomeBubble);
+    
+    // Add Start button
+    const startContainer = document.createElement('div');
+    startContainer.className = 'flex justify-center mb-4 px-4';
+    const startBtn = document.createElement('button');
+    startBtn.className = 'px-6 py-3 bg-indigo-600 text-white font-extrabold rounded-full shadow-lg hover:bg-indigo-700 active:scale-95 transition';
+    startBtn.textContent = 'Start';
+    startBtn.addEventListener('click', () => {
+      vm.currentStep = ChatStep.NAME_INPUT;
+      vm._pushBot("Hey — I'm Vibe. 💜 What should I call you? (First name is perfect.)");
+      vm.notify();
+    });
+    startContainer.appendChild(startBtn);
+    chatContent.appendChild(startContainer);
+  } else {
   vm.messages.forEach(msg => chatContent.appendChild(renderMessageBubble(msg)));
+  }
+
+  // Show typing indicator if bot is typing
+  if (vm.isTyping) {
+    chatContent.appendChild(renderTypingIndicator());
+  }
 
   wrapper.appendChild(chatContent);
   chatContainer.appendChild(wrapper);
@@ -2434,13 +2587,32 @@ function renderDevPanel() {
   return panel;
 }
 
+function renderTypingIndicator() {
+  const container = document.createElement('div');
+  container.className = 'flex justify-start mb-3 px-4';
+  container.id = 'typing-indicator';
+  
+  const bubble = document.createElement('div');
+  bubble.className = 'bot-bubble max-w-[75%] px-4 py-3';
+  bubble.innerHTML = `
+    <div class="flex items-center gap-1.5">
+      <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms;"></div>
+      <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms;"></div>
+      <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms;"></div>
+    </div>
+  `;
+  
+  container.appendChild(bubble);
+  return container;
+}
+
 function renderMessageBubble(message) {
   const bubbleContainer = document.createElement('div');
   const isBot = message.sender === Sender.BOT;
-  bubbleContainer.className = `flex mb-3 ${isBot ? 'justify-start' : 'justify-end'} px-2`;
+  bubbleContainer.className = `flex mb-3 ${isBot ? 'justify-start' : 'justify-end'} px-4`;
 
   const bubble = document.createElement('div');
-  let bubbleClass = 'max-w-[82%] px-4 py-3 shadow-md text-sm';
+  let bubbleClass = 'max-w-[75%] px-4 py-3 text-sm';
   bubbleClass += isBot ? ' bot-bubble' : ' user-bubble';
   if (!isBot && message.isQuickReplySelection) bubbleClass += ' bg-teal-500 text-xs';
 
@@ -2458,11 +2630,11 @@ function renderMessageBubble(message) {
 
 function renderChatInput() {
   const inputBar = document.createElement('div');
-  inputBar.className = 'chat-input-bar flex flex-col space-y-2 pb-5 pt-2 px-4';
+  inputBar.className = 'chat-input-bar flex flex-col space-y-2';
 
   if (vm.availableQuickReplies && vm.availableQuickReplies.length > 0) {
     const chips = document.createElement('div');
-    chips.className = 'flex flex-wrap gap-2';
+    chips.className = 'flex flex-wrap gap-2 mb-2';
     vm.availableQuickReplies.forEach(r => {
       const chip = document.createElement('button');
       chip.className = 'chip';
@@ -2474,31 +2646,38 @@ function renderChatInput() {
   }
 
   const inputGroup = document.createElement('div');
-  inputGroup.className = 'flex items-center space-x-2';
+  inputGroup.className = 'flex items-center gap-2';
 
   const input = document.createElement('input');
   input.type = 'text';
-  input.placeholder = vm.availableQuickReplies ? "Type if you want (or tap a chip)..." : "Your answer…";
-  input.className = 'flex-1 p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500';
+  input.placeholder = "Type a message…";
+  input.className = 'flex-1 px-4 py-3 bg-gray-100 border-0 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm';
 
   const send = document.createElement('button');
-  send.className = 'p-3 bg-indigo-600 text-white rounded-full transition disabled:bg-gray-400';
+  send.className = 'p-3 bg-indigo-600 text-white rounded-full transition disabled:bg-gray-300 disabled:opacity-50 hover:bg-indigo-700 active:scale-95';
   send.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i>';
   send.disabled = true;
 
-  input.addEventListener('input', () => { send.disabled = input.value.trim() === ''; });
+  input.addEventListener('input', () => { 
+    send.disabled = input.value.trim() === '';
+  });
 
   const doSend = () => {
     const v = input.value.trim();
-    if (!v) return;
+    if (!v || send.disabled) return;
     vm.advanceChat(v, false);
     input.value = '';
     send.disabled = true;
-    setTimeout(scrollToBottom, 60);
+    setTimeout(scrollToBottom, 100);
   };
 
   send.addEventListener('click', doSend);
-  input.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !send.disabled) doSend(); });
+  input.addEventListener('keypress', (e) => { 
+    if (e.key === 'Enter' && !send.disabled) {
+      e.preventDefault();
+      doSend();
+    }
+  });
 
   inputGroup.appendChild(input);
   inputGroup.appendChild(send);
